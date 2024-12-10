@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"com.knockk.api.data.repository","l":"AdminRepository"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"}];updateSearchResults();

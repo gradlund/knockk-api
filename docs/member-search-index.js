@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"com.knockk.api.data.repository","c":"AdminRepository","l":"findByUsernameAndPassword(String, String)","u":"findByUsernameAndPassword(java.lang.String,java.lang.String)"}];updateSearchResults();
