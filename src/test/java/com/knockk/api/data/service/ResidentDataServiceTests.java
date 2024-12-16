@@ -1,3 +1,6 @@
+// Grace Radlund
+// 12-15-2024
+// Tests generated with the help of ChatGPT 4o mini
 package com.knockk.api.data.service;
 
 import static org.mockito.Mockito.*;
@@ -11,87 +14,98 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UserRepository;
 
 public class ResidentDataServiceTests {
 
+    // Mock the UserRepository to simulate interactions with the database.
     @Mock
     private UserRepository userRepository;
-
-    @InjectMocks
+    
+    // Mock the ResidentRepository to simulate interactions with the database.
+    @Mock
+    private ResidentRepository residentRepository;
+    
     private ResidentDataService residentDataService;
 
+    // Test data to be used in multiple test cases.
     private String validEmail = "testuser@example.com";
     private String validPassword = "password123";
-    private UUID validId = UUID.randomUUID();
+    private UUID validId = UUID.randomUUID(); // A mock UUID to simulate a valid resident ID.
+
 
     @BeforeEach
     public void setUp() {
-        // Initialize mocks
+        // Initialize the mocks before each test method
         MockitoAnnotations.openMocks(this);
+        
+        // Inject mocks into the service.
+        residentDataService = new ResidentDataService(userRepository, residentRepository);
     }
 
-    //Simulates finding a resident when the credentials are valid
+    // Test case for successful login with valid email and password.
     @Test
     public void testFindResidentByEmailAndPassword_Success() throws CredentialException {
-        // Arrange: Simulate a successful user repository response
+        // Mock the repository to return a valid UUID when correct credentials are provided.
         when(userRepository.findByEmailAndPassword(validEmail, validPassword)).thenReturn(Optional.of(validId));
 
-        // Act: Call the service method
+        // Call the service method with valid credentials and capture the result.
         UUID result = residentDataService.findResidentByEmailAndPassword(validEmail, validPassword);
 
-        // Assert: Verify the result is as expected
+        // Assert that the returned UUID is not null, indicating a successful login.
         assertNotNull(result);
+        // Assert that the returned UUID matches the expected valid ID.
         assertEquals(validId, result);
 
-        // Verify that the repository method was called with the correct arguments
+        // Verify that the repository method was called exactly once with the correct parameters.
         verify(userRepository, times(1)).findByEmailAndPassword(validEmail, validPassword);
     }
 
-    //Simulates finding a resident where the credentials are invalid
+    // Test case for invalid credentials (i.e., wrong email or password).
     @Test
     public void testFindResidentByEmailAndPassword_InvalidCredentials() {
-        // Arrange: Simulate no user found in the repository
+        // Mock the repository to return an empty Optional when invalid credentials are provided.
         when(userRepository.findByEmailAndPassword(validEmail, validPassword)).thenReturn(Optional.empty());
 
-        // Act & Assert: Verify that a CredentialException is thrown
+        // Assert that the service method throws a CredentialException when no matching resident is found.
         assertThrows(CredentialException.class, () -> {
             residentDataService.findResidentByEmailAndPassword(validEmail, validPassword);
         });
 
-        // Verify that the repository method was called once
+        // Verify that the repository method was called exactly once with the correct parameters.
         verify(userRepository, times(1)).findByEmailAndPassword(validEmail, validPassword);
     }
 
-    //Tests the behavior when the email is empty
+    // Test case for an empty email provided in the login attempt.
     @Test
     public void testFindResidentByEmailAndPassword_EmptyEmail() throws CredentialException {
-        // Arrange: Simulate a response when email is empty
+        // Simulate an empty email and mock the repository to return an empty Optional.
         String emptyEmail = "";
         when(userRepository.findByEmailAndPassword(emptyEmail, validPassword)).thenReturn(Optional.empty());
 
-        // Act & Assert: Expect CredentialException for empty email
+        // Assert that the service method throws a CredentialException when the email is empty.
         assertThrows(CredentialException.class, () -> {
             residentDataService.findResidentByEmailAndPassword(emptyEmail, validPassword);
         });
 
-        // Verify the repository interaction
+        // Verify that the repository method was called exactly once with the empty email.
         verify(userRepository, times(1)).findByEmailAndPassword(emptyEmail, validPassword);
     }
 
-    //Tests the behavior when the password is empty
+    // Test case for an empty password provided in the login attempt.
     @Test
     public void testFindResidentByEmailAndPassword_EmptyPassword() throws CredentialException {
-        // Arrange: Simulate a response when password is empty
+        // Simulate an empty password and mock the repository to return an empty Optional.
         String emptyPassword = "";
         when(userRepository.findByEmailAndPassword(validEmail, emptyPassword)).thenReturn(Optional.empty());
 
-        // Act & Assert: Expect CredentialException for empty password
+        // Assert that the service method throws a CredentialException when the password is empty.
         assertThrows(CredentialException.class, () -> {
             residentDataService.findResidentByEmailAndPassword(validEmail, emptyPassword);
         });
 
-        // Verify the repository interaction
+        // Verify that the repository method was called exactly once with the empty password.
         verify(userRepository, times(1)).findByEmailAndPassword(validEmail, emptyPassword);
     }
 }

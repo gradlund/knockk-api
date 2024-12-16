@@ -7,6 +7,7 @@ import javax.security.auth.login.CredentialException;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.ResidentDataService;
+import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.UserModel;
 
@@ -33,10 +34,16 @@ public class ResidentBusinessService {
 	 * @return response back from the data service
 	 * @throws CredentialException exception thrown if the credentials are invalid
 	 */
-	public UUID login(UserModel credential) throws CredentialException {
+	public LoginModel login(UserModel credential) throws CredentialException {
 		String email = credential.getEmail();
 		String password = credential.getPassword();
 
-		return dataService.findResidentByEmailAndPassword(email, password);
+		//Find id
+		UUID id = dataService.findResidentByEmailAndPassword(email, password);
+		
+		//Find if verified
+		Boolean verified = dataService.checkVerified(id);
+		
+		return new LoginModel(id, verified);
 	}
 }

@@ -1,3 +1,6 @@
+// Grace Radlund
+// 12-15-2024
+// Tests generated with the help of ChatGPT 4o mini
 package com.knockk.api.business;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,32 +18,36 @@ import org.mockito.*;
 
 class AdminBusinessServiceTests {
 
+	// Mock the AdminDataService
 	@Mock
-    private AdminDataService dataService; // Mock the AdminDataService
+    private AdminDataService dataService; 
 
     private AdminBusinessService adminBusinessService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this); // Initialize mocks
-        adminBusinessService = new AdminBusinessService(dataService); // Inject mock into service
+    	// Initialize mocks before each test method
+        MockitoAnnotations.openMocks(this); 
+        // Inject mock into service
+        adminBusinessService = new AdminBusinessService(dataService); 
     }
 
     // Test for successful login
     @Test
     void testLogin_Success() throws Exception {
-        // Arrange
+    	// Prepare test data (adminModel) and define the expected result (UUID).
         AdminModel adminModel = new AdminModel("adminUser", "adminPassword");
-        UUID expectedUuid = UUID.randomUUID(); // Mock UUID as the expected result
+        // Mock UUID as the expected result
+        UUID expectedUuid = UUID.randomUUID(); 
 
-        // Mock the call to AdminDataService
+        // Mock the AdminDataService to return the expected UUID when called with the admin's username and password.
         when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
                 .thenReturn(expectedUuid);
 
-        // Act
+        // Call the login method on the business service and get the actual result.
         UUID actualUuid = adminBusinessService.login(adminModel);
 
-        // Assert
+        // Check that the result is not null and matches the expected UUID.
         assertNotNull(actualUuid);
         assertEquals(expectedUuid, actualUuid);
         
@@ -51,39 +58,41 @@ class AdminBusinessServiceTests {
     // Test for invalid credentials (throws CredentialException)
     @Test
     void testLogin_InvalidCredentials() throws CredentialException {
-        // Arrange
+        // Prepare invalid login credentials (wrong username and password).
         AdminModel adminModel = new AdminModel("wrongUser", "wrongPassword");
 
-        // Mock the call to AdminDataService to throw CredentialException
+        // Mock the AdminDataService to throw a CredentialException when called with invalid credentials.
         when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
                 .thenThrow(new CredentialException("Invalid credentials"));
 
-        // Act & Assert
+        // Call the login method and assert that the CredentialException is thrown.
         CredentialException thrown = assertThrows(CredentialException.class, () -> {
             adminBusinessService.login(adminModel);
         });
 
+        // Check that the exception message matches the expected error message.
         assertEquals("Invalid credentials", thrown.getMessage());
         
         // Verify that the service method was called with the correct parameters
         verify(dataService, times(1)).findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword());
     }
 
-    // Test for unexpected exceptions (e.g., RuntimeException)
+    // Test for unexpected exceptions 
     @Test
     void testLogin_UnexpectedException() throws CredentialException {
-        // Arrange
+        // Prepare valid login credentials but simulate an unexpected error (RuntimeException).
         AdminModel adminModel = new AdminModel("adminUser", "adminPassword");
 
-        // Mock the call to AdminDataService to throw an unexpected exception
+        // Mock the AdminDataService to throw a RuntimeException for any reason.
         when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
-        // Act & Assert
+        // Call the login method and assert that the RuntimeException is thrown.
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> {
             adminBusinessService.login(adminModel);
         });
 
+        // Check that the exception message matches the expected error message.
         assertEquals("Unexpected error", thrown.getMessage());
         
         // Verify that the service method was called with the correct parameters

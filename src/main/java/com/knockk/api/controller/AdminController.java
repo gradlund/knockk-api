@@ -54,8 +54,8 @@ public class AdminController {
 			data.put("Id", id);
 
 			//Return the response
-			ResponseModel<UUID> response = new ResponseModel<UUID>(data, "Login Successful", 204);
-			return new ResponseEntity<ResponseModel<UUID>>(response, HttpStatus.OK); // using NO_CONTENT will not return
+			ResponseModel<HashMap<String, UUID>> response = new ResponseModel<HashMap<String, UUID>>(data, "Login Successful", 204);
+			return new ResponseEntity<ResponseModel<HashMap<String, UUID>>>(response, HttpStatus.OK); // using NO_CONTENT will not return
 																						// a response body
 		}
 		//If there is an exception, throw an error
@@ -75,27 +75,27 @@ public class AdminController {
 		HashMap<String, String> data = new HashMap<>();
 		data.put("Error", e.getMessage());
 
-		ResponseModel<String> response = new ResponseModel<String>(data);
+		ResponseModel<HashMap<String, String>> response = new ResponseModel<HashMap<String, String>>(data);
 
 		// Bad request - request body is invalid
 		if (e.getMessage().toLowerCase().contains("bad request")) {
 			response.setMessage(e.getLocalizedMessage());
 			response.setStatus(400);
-			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.FORBIDDEN);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.FORBIDDEN);
 		}
 		// Forbidden
 		else if (e.getMessage().toLowerCase().contains("invalid credentials")) {
 			// response.setMessage(e.getLocalizedMessage());
 			response.setMessage("Forbidden. Invalid credentials.");
 			response.setStatus(403);
-			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.BAD_REQUEST);
 		}
 		// Internal Server Error
 		else {
 			response.setMessage(
 					"Internal Service Error. The server was unable to complete your request. Please try again later.");
 			response.setStatus(500);
-			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 }

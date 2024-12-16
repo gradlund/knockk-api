@@ -8,26 +8,27 @@ import java.util.HashMap;
  */
 public class ResponseModel<T> {
 	
-	private HashMap<String, T> data;
+	private T data;
 	private String message;
 	private int status;
 
-	public ResponseModel(HashMap<String, T> data, String message, int status) {
+	public ResponseModel(T data, String message, int status) {
 		this.data = data;
 		this.message = message;
 		this.status = status;
 	}
 	
+	
 	//Constructor used for error handling - doesn't include status
-	public ResponseModel(HashMap<String, T> data) {
+	public ResponseModel(T data) {
 		this.data = data;
 	}
 
-	public HashMap<String, T> getData() {
+	public T getData() {
 		return data;
 	}
 
-	public void setData(HashMap<String, T> data) {
+	public void setData(T data) {
 		this.data = data;
 	}
 

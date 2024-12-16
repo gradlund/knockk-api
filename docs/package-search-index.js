@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.knockk.api.data.repository"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.knockk.api"},{"l":"com.knockk.api.business"},{"l":"com.knockk.api.controller"},{"l":"com.knockk.api.data.mapper"},{"l":"com.knockk.api.data.repository"},{"l":"com.knockk.api.data.service"},{"l":"com.knockk.api.entity"},{"l":"com.knockk.api.model"}];updateSearchResults();
