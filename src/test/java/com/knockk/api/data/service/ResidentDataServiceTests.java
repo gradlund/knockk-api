@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Optional;
 import java.util.UUID;
 import javax.security.auth.login.CredentialException;
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ public class ResidentDataServiceTests {
     
     private ResidentDataService residentDataService;
 
+    @Mock
+    private DataSource dataSource;
+	
     // Test data to be used in multiple test cases.
     private String validEmail = "testuser@example.com";
     private String validPassword = "password123";
@@ -41,7 +45,7 @@ public class ResidentDataServiceTests {
         MockitoAnnotations.openMocks(this);
         
         // Inject mocks into the service.
-        residentDataService = new ResidentDataService(userRepository, residentRepository);
+        residentDataService = new ResidentDataService(dataSource, userRepository, residentRepository);
     }
 
     // Test case for successful login with valid email and password.

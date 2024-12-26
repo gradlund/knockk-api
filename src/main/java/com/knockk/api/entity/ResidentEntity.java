@@ -24,8 +24,8 @@ public class ResidentEntity {
 	@Column("last_name")
 	private String lastName;
 	
-//	@Column("gender")
-//	private Gender gender;
+	@Column("gender")
+	private Gender gender;
 	
 	@Column("age")
 	private int age;
@@ -61,14 +61,14 @@ public class ResidentEntity {
 	private boolean verified;
 
 	public ResidentEntity(UUID id, String firstName, String lastName, 
-			//Gender gender, 
+			Gender gender, 
 			int age, String hometown,
 			String biography, String profilePhoto, String backgroundPhoto, String instagram, String snapchat, String x,
 			String facebook, UUID leaseId, boolean verified) {
 		this.id = id;
 		this.firstName = firstName;
 		this.lastName = lastName;
-		//this.gender = gender;
+		this.gender = gender;
 		this.age = age;
 		this.hometown = hometown;
 		this.biography = biography;
@@ -110,13 +110,13 @@ public class ResidentEntity {
 		this.lastName = lastName;
 	}
 
-//	public Gender getGender() {
-//		return gender;
-//	}
-//
-//	public void setGender(Gender gender) {
-//		this.gender = gender;
-//	}
+	public Gender getGender() {
+		return gender;
+	}
+
+	public void setGender(Gender gender) {
+		this.gender = gender;
+	}
 
 	public int getAge() {
 		return age;
