@@ -7,7 +7,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Entity class for the user table
+ * Entity class for the User table.
  */
 @Table("User")
 public class UserEntity {

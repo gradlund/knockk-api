@@ -1,7 +1,5 @@
 package com.knockk.api.model;
 
-import java.util.HashMap;
-
 /**
  * Model used in the response entity
  * @param <T> generic used for the value of the HashMap

@@ -10,13 +10,15 @@ import com.knockk.api.entity.UserEntity;
 
 /**
  * Interface for the resident repository
+ * 
  * @author graceradlund
  */
 public interface UserRepository extends CrudRepository<UserEntity, UUID> {
-	
+
 	/**
 	 * Finds the id of the resident, given their email and password
-	 * @param email : email of the resident
+	 * 
+	 * @param email    : email of the resident
 	 * @param password : password of the resident
 	 * @return the resident's id if the credentials are valid
 	 */

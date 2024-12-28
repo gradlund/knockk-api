@@ -15,10 +15,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import com.knockk.api.data.repository.BuildingRepository;
+import com.knockk.api.data.repository.LeaseRepository;
 import com.knockk.api.data.repository.ResidentRepository;
+import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
 
 public class ResidentDataServiceTests {
+
+    //TODO: update mocks
+    @Mock
+    private BuildingRepository buildingRepository;
+
+    @Mock
+    private LeaseRepository leaseRepository;
 
     // Mock the UserRepository to simulate interactions with the database.
     @Mock
@@ -29,6 +39,9 @@ public class ResidentDataServiceTests {
     private ResidentRepository residentRepository;
     
     private ResidentDataService residentDataService;
+
+    @Mock
+    private UnitRepository unitRepository;
 
     @Mock
     private DataSource dataSource;
@@ -45,7 +58,7 @@ public class ResidentDataServiceTests {
         MockitoAnnotations.openMocks(this);
         
         // Inject mocks into the service.
-        residentDataService = new ResidentDataService(dataSource, userRepository, residentRepository);
+        residentDataService = new ResidentDataService(buildingRepository, dataSource, leaseRepository, unitRepository, userRepository, residentRepository);
     }
 
     // Test case for successful login with valid email and password.

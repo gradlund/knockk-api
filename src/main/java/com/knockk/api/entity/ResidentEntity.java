@@ -9,7 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import com.knockk.api.data.Gender;
 
 /**
- * Entity class for the resident table
+ * Entity class for the Resident table
  */
 @Table("Resident")
 public class ResidentEntity {
@@ -26,7 +26,7 @@ public class ResidentEntity {
 	
 	@Column("gender")
 	private Gender gender;
-	
+
 	@Column("age")
 	private int age;
 	

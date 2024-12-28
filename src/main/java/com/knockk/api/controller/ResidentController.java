@@ -1,6 +1,7 @@
 package com.knockk.api.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.knockk.api.business.ResidentBusinessService;
 import com.knockk.api.model.LoginModel;
+import com.knockk.api.model.NeighborRoomModel;
 import com.knockk.api.model.ResponseModel;
 import com.knockk.api.model.UserModel;
 
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 /**
  * This class is the rest controller the admin application consumes
+ * 
  * @author graceradlund
  */
 @RestController
@@ -30,10 +36,46 @@ public class ResidentController {
 
 	private @Autowired ResidentBusinessService service;
 
+	// TODO: make sure resident id is valid?
+	// TODO: make sure resident is actually neighbors with them. (that a hacker is
+	// not trying to visit a room they're not neighbors with)
+	// ^^ will that be solved with a jwt?
+	/**
+	 * Retrieve neighboring rooms (getResidentResidentIdNeighboringRooms)
+	 * Shows details of rooms that the resident is neighbors with, by resident id.
+	 * Used when a resident is at the root page. Will display all directions the
+	 * resident has a neighbor. For example, if there is no neighbor above,
+	 * there will be arrows point to the right, down, and left - but not up.
+	 * 
+	 * @param id : id of the resident making the request
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
+	@GetMapping("/{residentId}/neighbor-units")
+	public ResponseEntity<?> getNeighborUnits(@PathVariable("residentId") String id) {
+		// Get neighboring units
+		try {
+			UUID residentId = UUID.fromString(id);
+			// TODO: Should return error if resident id is wrong?
+			List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
+
+			// ResponseModel with a list of neighboring rooms, message, and status code
+			ResponseModel<List<NeighborRoomModel>> response = new ResponseModel<List<NeighborRoomModel>>(neighbors,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<List<NeighborRoomModel>>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
 	/**
 	 * Logs the user in
+	 * 
 	 * @param credentials : credentials passed by the admin in the request
-	 * @param errors : data-binding and validation errors relating to the request body
+	 * @param errors      : data-binding and validation errors relating to the
+	 *                    request body
 	 * @return a ResponseEntity with a status code, message, and data
 	 */
 	@PostMapping("/login")
@@ -46,10 +88,9 @@ public class ResidentController {
 			LoginModel user = service.login(credentials);
 
 			ResponseModel<LoginModel> response = new ResponseModel<LoginModel>(user, "Login Successful", 204);
-			return new ResponseEntity<ResponseModel<LoginModel>>(response, HttpStatus.OK); // using NO_CONTENT will not return
-																						// a response body
+			return new ResponseEntity<ResponseModel<LoginModel>>(response, HttpStatus.OK); // using NO_CONTENT will not
+																							// return a response body
 		} catch (Exception e) {
-			System.out.println("OPe");
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
@@ -58,6 +99,7 @@ public class ResidentController {
 
 	/**
 	 * Method to handle the responses of errors
+	 * 
 	 * @param e : error that occured
 	 * @return a ResponseEntity with a status code message, and data
 	 */
@@ -85,7 +127,8 @@ public class ResidentController {
 			response.setMessage(
 					"Internal Service Error. The server was unable to complete your request. Please try again later.");
 			response.setStatus(500);
-			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response,
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
