@@ -1,5 +1,6 @@
 package com.knockk.api.data.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,11 +17,11 @@ import com.knockk.api.entity.ResidentEntity;
 public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID> {
 
 	/**
-	 * Retrieves the id of the resident, given their email and password
+	 * TODO: Error with PG convertor
+	 * Retrieves the resident by id
 	 * 
-	 * @param email    : email of the resident
-	 * @param password : password of the resident
-	 * @return the resident's id if the credentials are valid
+	 * @param residentId : id of the resident
+	 * @return the resident
 	 */
 	@Query(value = "SELECT * from \"Resident\" where resident_id = :residentId")
 	Optional<ResidentEntity> findById(UUID residentId);
@@ -37,11 +38,24 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	// Need "" or Supabase otherwise table will not be found
 	// switch to returning a list of residents instead - or optional if a room has
 	// no residents
-	@Query(value = "select exists(" +
-			"  select \"Resident\".resident_id from \"Unit\"" +
+	// @Query(value = "select exists(" +
+	// " select \"Resident\".resident_id from \"Unit\"" +
+	// " INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	// " INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	// " where \"Unit\".floor = :floor AND \"Unit\".room = :room" +
+	// " )")
+	// List<UUID> findResidentsByUnitBad(int floor, int room);
+
+	/**
+	 * Retrieves UUIDs of resident given the unit information
+	 * 
+	 * @param floor : the unit is on
+	 * @param room  : the unit is in
+	 * @return a list of ids of residents in that unit
+	 */
+	@Query(value = "select \"Resident\".resident_id from \"Unit\"" +
 			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
 			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
-			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room" +
-			"  )")
-	boolean findResidentsByUnit(int floor, int room);
+			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
+	List<UUID> findResidentsByUnit(int floor, int room);
 }

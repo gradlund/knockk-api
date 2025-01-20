@@ -14,13 +14,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.repository.BuildingRepository;
+import com.knockk.api.data.repository.FriendshipRepository;
 import com.knockk.api.data.repository.LeaseRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
 import com.knockk.api.entity.BuildingEntity;
+import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.entity.UnitResidentEntity;
 import com.knockk.api.data.mapper.ResidentMapper;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
@@ -34,6 +37,7 @@ import com.knockk.api.data.mapper.ResidentMapper;
 public class ResidentDataService {
 
 	private BuildingRepository buildingRepository;
+	private FriendshipRepository friendshipRepository;
 	private LeaseRepository leaseRepository;
 	private UnitRepository unitRepository;
 	private UserRepository userRepository;
@@ -43,17 +47,20 @@ public class ResidentDataService {
 	/**
 	 * Constructor for dependency injection
 	 * 
-	 * @param buildingRepository : building repository being injected
-	 * @param dataSource         : data source being injected
-	 * @param leaseRepository:   lease repository being injected
-	 * @param unitRepository     : unit repository being injected
-	 * @param userRepository     : user repository being injected
-	 * @param residentRepository : resident repository being injected
+	 * @param buildingRepository   : building repository being injected
+	 * @param dataSource           : data source being injected
+	 * @param friendshipRepository : friendship repository being injected
+	 * @param leaseRepository:     lease repository being injected
+	 * @param unitRepository       : unit repository being injected
+	 * @param userRepository       : user repository being injected
+	 * @param residentRepository   : resident repository being injected
 	 */
 	public ResidentDataService(BuildingRepository buildingRepository, DataSource dataSource,
+			FriendshipRepository friendshipRepository,
 			LeaseRepository leaseRepository, UnitRepository unitRepository, UserRepository userRepository,
 			ResidentRepository residentRepository) {
 		this.buildingRepository = buildingRepository;
+		this.friendshipRepository = friendshipRepository;
 		this.leaseRepository = leaseRepository;
 		this.unitRepository = unitRepository;
 		this.userRepository = userRepository;
@@ -178,9 +185,31 @@ public class ResidentDataService {
 		return resident.get(0).isVerified();
 	}
 
+	// TODO - should probably refactor so that I'm not throwing an error
+	/**
+	 * Retrieves the friendship of two residents
+	 * 
+	 * @param residentId : id of the resident (user)
+	 * @param friendId   : if of the friend (neighbor)
+	 * @return an optional friendship entity
+	 */
+	public Optional<FriendshipEntity> findFriendship(UUID residentId, UUID friendId) {
+		// Retrieve the friendship
+		return friendshipRepository.findByResidentIdAndNeighborId(residentId,
+				friendId);
+	}
+
 	// TODO: write tests and javadocs
+	/**
+	 * Retrieves the id of the unit by the id of the resident
+	 * 
+	 * @param residentId : id of the resident
+	 * @return the id of the unit
+	 * @throws Exception : if there is a problem getting the lease id (i.e. one may
+	 *                   not exist)
+	 */
 	public UUID findUnitByUserId(UUID residentId) throws Exception {
-		// Get the lease id
+		// Retrieve the lease id
 		Optional<UUID> leaseId = residentRepository.findLeaseIdByResidentId(residentId);
 
 		// Check for optional
@@ -188,9 +217,7 @@ public class ResidentDataService {
 			throw new Exception("Problem getting lease id.");
 		}
 
-		System.out.println(leaseId.get());
-
-		// Find the unit id
+		// Find the unit id by lease id
 		Optional<UUID> unitId = leaseRepository.findUnitByLeaseId(leaseId.get());
 
 		// Check for optional
@@ -200,10 +227,6 @@ public class ResidentDataService {
 		// Return the unit id
 		return unitId.get();
 	}
-
-	// public List<NeighborEntity> findNeighbors(int floor, int room){
-	// //
-	// }
 
 	/**
 	 * Finds the id of the resident given their email and password. Uses the user
@@ -225,6 +248,12 @@ public class ResidentDataService {
 		return id.get();
 	}
 
+	/**
+	 * Retrieves a unit by the id of the unit
+	 * 
+	 * @param unitId : id of the unit
+	 * @return a UnitEntity
+	 */
 	public UnitEntity findUnitById(UUID unitId) {
 		Optional<UnitEntity> unit = unitRepository.findById(unitId);
 
@@ -233,7 +262,116 @@ public class ResidentDataService {
 		if (!unit.isPresent())
 			throw new NoSuchElementException("Unit does not exist.");
 
+		// Return the unit
 		return unit.get();
+	}
+
+	/**
+	 * Retrieve a list of resident ids who live in a unit.
+	 * 
+	 * @param floor : floor the unit is on
+	 * @param room  : room the unit is in
+	 * @return a list of ids
+	 */
+	public List<UUID> findNeighborsByUnit(int floor, int room) {
+		// Return the list of ids
+		return residentRepository.findResidentsByUnit(floor, room);
+	}
+
+	/**
+	 * Checks to see if two residents are friends.
+	 * 
+	 * NOTE: neighbors don't always have a friendship relationship.
+	 * 
+	 * @param residentId : id of the resident (user)
+	 * @param friendId   : id of the friend (neighbor)
+	 * @return a boolean - true if connected, false if not connected or a friendship
+	 *         doesn't exist
+	 */
+	public boolean checkConnected(UUID residentId, UUID friendId) {
+		// Retrieve a frindship given the resident and friend is
+		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(residentId,
+				friendId);
+
+		// Check for optional, meaning no friendship exists
+		if (!friendship.isPresent()) {
+			return false;
+		}
+		// Return accepted
+		return friendship.get().isAccepted();
+
+	}
+
+	// TODO: do I need to retrieve the whole residententity?
+	/**
+	 * Retrieves the name of the resident.
+	 * 
+	 * NOTE: isFullName will be true if a resident is connected or if it's the user
+	 * resident retrieving their name.
+	 * 
+	 * @param id         : id of the resident
+	 * @param isFullName : boolean to see if the full name should be returned.
+	 * @return the name of the resident
+	 */
+	public String getResidentName(UUID id, boolean isFullName) {
+		// Retrieve the resident
+		ResidentEntity resident = getResidentEntity(id);
+
+		// If full name, get first and last
+		if (isFullName) {
+			return resident.getFirstName() + " " + resident.getLastName();
+
+		}
+		// Else only get first
+		else {
+			return resident.getFirstName();
+		}
+	}
+
+	// TODO: do I need to retrieve the whole residententity?
+	/**
+	 * Retrieves the profile photo of the resident
+	 * 
+	 * @param id : id of the resident
+	 * @return the photo uri
+	 */
+	public String getProfilePhoto(UUID id) {
+		// Retrieve the resident
+		ResidentEntity resident = getResidentEntity(id);
+
+		// TODO: will the database return null if the photois empty?
+		// Get the resident
+		System.out.println(resident.getProfilePhoto());
+		if (resident.getProfilePhoto() == null)
+			return null;
+
+		return resident.getProfilePhoto();
+
+	}
+
+	// This method handles errors
+	// residentrepository.findbyId doesn't work with the mapper
+	/**
+	 * NOTE: does not use the repository because there is an error with the
+	 * PGObject
+	 * convertor...
+	 * Have to use the convertor because some types in Supabase need to be converted
+	 * (like jsonb)
+	 * 
+	 * @param id
+	 * @return
+	 */
+	public ResidentEntity getResidentEntity(UUID id) {
+		// TODO: switch to using repository or using prepared statement
+		String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + id + "'";
+		List<ResidentEntity> resident = jdbcTemplateObject.query(sql, new ResidentMapper());
+
+		// Check if the list is empty (means there was a problem returning the resident
+		// or they don't exist)
+		if (resident.isEmpty()) {
+			throw new NoSuchElementException("Problem retrieving resident.");
+		}
+		return resident.get(0);
 	}
 
 }

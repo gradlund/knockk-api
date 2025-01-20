@@ -1,5 +1,6 @@
 package com.knockk.api.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -15,9 +16,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.knockk.api.business.ResidentBusinessService;
+import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
 import com.knockk.api.model.ResponseModel;
+import com.knockk.api.model.UnitResidentModel;
 import com.knockk.api.model.UserModel;
 
 import jakarta.validation.Valid;
@@ -35,6 +38,82 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class ResidentController {
 
 	private @Autowired ResidentBusinessService service;
+
+	/**
+	 * Shows details of a friendship, by resident id and friend's resident id.
+	 * 
+	 * Used to see if the resident is connected with the neighbor (to see if it's
+	 * pending).
+	 * A friendship that doesn't exist will throw a 404 error.
+	 * 
+	 * NOTE: Should ensure that the friend is a neighbor of the resident. May not be
+	 * necessary because
+	 * viewing a room fetches if there is a friendship or not.
+	 * 
+	 * @param id       : id of the resident
+	 * @param friendId : if of the neighboring resident
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
+	@GetMapping("/{residentId}/friendship/{friendId}")
+	public ResponseEntity<?> getMethodName(@PathVariable("residentId") String id,
+			@PathVariable("friendId") String friendId) {
+		try {
+			// Retrieve the id's from the parameters
+			UUID residentId = UUID.fromString(id);
+			UUID neighborId = UUID.fromString(friendId);
+
+			// Retrieve the friendship (if one exists)
+			FriendshipModel friendship = service.getFriendship(residentId, neighborId);
+
+			// ResponseModel with a list of neighboring residents of the unit, message, and
+			// status code
+			ResponseModel<FriendshipModel> response = new ResponseModel<FriendshipModel>(friendship,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	/**
+	 * Retrieve a list of residents in a neighboring unit
+	 * 
+	 * TODO: make sure params are valid. make sure they are acutally neighbors? do
+	 * something with the id
+	 * 
+	 * @param id:   id of the resident (user)
+	 * @param floor : floor that the neighboring unit is on
+	 * @param room  : room that the neighboring unit is
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
+	@GetMapping("/{residentId}/neighbor-units/{floor}-{room}")
+	public ResponseEntity<?> getNeighborResidents(@PathVariable("residentId") String id,
+			@PathVariable("floor") int floor, @PathVariable("room") int room) {
+		try {
+			UUID residentId = UUID.fromString(id);
+
+			// TODO: make a check to make sure they aren't veiwing their unit for some
+			// reason
+			// Get the residents of the unit
+			// NOTE: will return nothing if there are no residents in that unit, or the unit
+			// does not yet exist in the system
+			ArrayList<UnitResidentModel> residents = service.getNeighborResidents(residentId, floor, room);
+
+			// ResponseModel with a list of neighboring residents of the unit, message, and
+			// status code
+			ResponseModel<List<UnitResidentModel>> response = new ResponseModel<List<UnitResidentModel>>(residents,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<List<UnitResidentModel>>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
 
 	// TODO: make sure resident id is valid?
 	// TODO: make sure resident is actually neighbors with them. (that a hacker is
@@ -121,6 +200,12 @@ public class ResidentController {
 			response.setMessage("Forbidden. Invalid credentials.");
 			response.setStatus(403);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.BAD_REQUEST);
+		}
+		// Not Found
+		else if (e.getMessage().toLowerCase().contains("not found")) {
+			response.setMessage("Not Found");
+			response.setStatus(404);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
 		// Internal Server Error
 		else {
