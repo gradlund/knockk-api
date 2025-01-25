@@ -24,6 +24,7 @@ import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
 import com.knockk.api.entity.UnitResidentEntity;
+import com.knockk.api.data.mapper.FriendshipMapper;
 import com.knockk.api.data.mapper.ResidentMapper;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
@@ -248,6 +249,10 @@ public class ResidentDataService {
 		return id.get();
 	}
 
+	public ResidentEntity findResidentById(UUID residentId) {
+        return getResidentEntity(residentId);
+    }
+
 	/**
 	 * Retrieves a unit by the id of the unit
 	 * 
@@ -339,9 +344,8 @@ public class ResidentDataService {
 		// Retrieve the resident
 		ResidentEntity resident = getResidentEntity(id);
 
-		// TODO: will the database return null if the photois empty?
 		// Get the resident
-		System.out.println(resident.getProfilePhoto());
+		// Database will return null if a profile photo does not exist
 		if (resident.getProfilePhoto() == null)
 			return null;
 
@@ -373,5 +377,53 @@ public class ResidentDataService {
 		}
 		return resident.get(0);
 	}
+
+	public ResidentEntity updateResident(ResidentEntity resident) {
+		return residentRepository.save(resident);
+	}
+
+	public FriendshipEntity updateFriendship(UUID invitorId, UUID inviteeId, boolean isAccepted) throws Exception {
+		//FriendshipEntity friendship = friendshipRepository.save(new FriendshipEntity(invitorId, inviteeId, isAccepted));
+		// String sql = "INSERT INTO \"Frienship\" (invitor_id)WHERE resident_id = '" + id + "'";
+		// int friendshipRows = jdbcTemplateObject.update(sql, new ResidentMapper());
+		//int rows = friendshipRepository.updateFriendship(invitorId, inviteeId, isAccepted);
+		//System.out.println(rows);
+		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId);
+		
+		// If a friendship exists, update the friendship
+		if(friendship.isPresent()){
+			FriendshipEntity updateFriendship = friendship.get();
+			if(updateFriendship.isAccepted() == isAccepted){
+				
+				System.out.println("Nothign to update; same friendship.");
+				throw new Exception("Nothing to update.");
+			}
+
+else{			updateFriendship.setAccepted(isAccepted);
+			System.out.println("Friendship updated");
+			return friendshipRepository.save(updateFriendship);
+}
+			//return friendshipRepository.updateFriendship(invitorId, inviteeId, isAccepted);
+		}
+
+
+		System.out.println("Friendship does not exist");
+		//Else create a friendship
+		// Doing the save method - what happens if I don't want to send id or date?
+		//return friendshipRepository.save(new FriendshipEntity(inviteeId, null, invitorId, inviteeId, isAccepted))
+		//String sql = "INSERT INTO \"Friendship\" (invitor_id, invitee_id, accepted ) VALUES (" + invitorId + ", " + inviteeId + ", " +isAccepted + ")";
+		//int friendshipRows = jdbcTemplateObject.update(sql, new FriendshipMapper());
+		UUID rows = friendshipRepository.addFriendship(invitorId, inviteeId, isAccepted);
+		//System.out.println(friendshipRows);
+		//if(rows. ){
+			System.out.println("Friendship created.");
+			return friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId).get();
+		//}
+
+		// Fiz I don't want to HAVE to do this
+		//return new FriendshipEntity(inviteeId, null, invitorId, inviteeId, isAccepted);
+	}
+
+    
 
 }

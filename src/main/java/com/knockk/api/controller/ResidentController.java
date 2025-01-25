@@ -3,6 +3,7 @@ package com.knockk.api.controller;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,10 @@ import com.knockk.api.business.ResidentBusinessService;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
+import com.knockk.api.model.OptionalResidentModel;
+import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.ResponseModel;
+import com.knockk.api.model.TestOptional;
 import com.knockk.api.model.UnitResidentModel;
 import com.knockk.api.model.UserModel;
 
@@ -27,6 +31,8 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 /**
  * This class is the rest controller the admin application consumes
@@ -38,6 +44,31 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class ResidentController {
 
 	private @Autowired ResidentBusinessService service;
+
+	/**
+	 * Is pending will be faale, if they accepted
+	 * @param friendshipRequest
+	 * @return
+	 */
+	@PostMapping("/friendship")
+	public ResponseEntity<?> createFriendship(@RequestBody FriendshipModel friendshipRequest) {
+		// Get resident
+		try {
+			// Update the friendship (create one)
+			FriendshipModel friendship = service.updateFriendship(friendshipRequest.getInvitorId(), friendshipRequest.getInviteeId(), friendshipRequest.isAccepted());
+
+
+			// ResponseModel with a list of neighboring rooms, message, and status code
+			ResponseModel<FriendshipModel> response = new ResponseModel<FriendshipModel>(friendship,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
 
 	/**
 	 * Shows details of a friendship, by resident id and friend's resident id.
@@ -55,7 +86,7 @@ public class ResidentController {
 	 * @return a ResponseEntity with a status code, message, and data
 	 */
 	@GetMapping("/{residentId}/friendship/{friendId}")
-	public ResponseEntity<?> getMethodName(@PathVariable("residentId") String id,
+	public ResponseEntity<?> getFriendship(@PathVariable("residentId") String id,
 			@PathVariable("friendId") String friendId) {
 		try {
 			// Retrieve the id's from the parameters
@@ -148,6 +179,64 @@ public class ResidentController {
 			return handleErrorResponse(e);
 		}
 	}
+
+	@GetMapping("/{residentId}")
+	public ResponseEntity<?> getResident(@PathVariable("residentId") String id) {
+		// Get resident
+		try {
+			UUID residentId = UUID.fromString(id);
+
+			// Retrieve resident by id
+			ResidentModel resident = service.getResident(residentId);
+
+			//System.out.println(resident.g)
+
+			// Optional<String> hm = Optional.of("ji");
+			// hm.empty();
+
+			// TestOptional test = new TestOptional(null, hm, null);
+			// // TODO: Should return error if resident id is wrong?
+			// //List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
+
+			// ResponseModel with a list of neighboring rooms, message, and status code
+			ResponseModel<ResidentModel> response = new ResponseModel<ResidentModel>(resident,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<ResidentModel>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	
+	@PostMapping("/{residentId}")
+	public ResponseEntity<?> updateResident(@PathVariable("residentId") String id, @RequestBody OptionalResidentModel residentInfo) {
+		// Get resident
+		try {
+			UUID residentId = UUID.fromString(id);
+
+			System.out.println(residentInfo.getX());
+
+			boolean updated = service.updateResident(residentId, residentInfo);
+
+			TestOptional test = new TestOptional(null, null, null);
+			// TODO: Should return error if resident id is wrong?
+			//List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
+
+			// ResponseModel with a list of neighboring rooms, message, and status code
+			ResponseModel<TestOptional> response = new ResponseModel<TestOptional>(test,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<TestOptional>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+	
 
 	/**
 	 * Logs the user in

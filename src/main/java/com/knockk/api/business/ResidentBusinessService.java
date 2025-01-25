@@ -8,14 +8,18 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialException;
 
+import org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.ResidentDataService;
 import com.knockk.api.entity.FriendshipEntity;
+import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
+import com.knockk.api.model.OptionalResidentModel;
+import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.UnitResidentModel;
 import com.knockk.api.model.UserModel;
 
@@ -174,20 +178,95 @@ public class ResidentBusinessService {
 	 */
 	public FriendshipModel getFriendship(UUID residentId, UUID friendId) {
 		// Retrieve the friendship
-		Optional<FriendshipEntity> friendship = dataService.findFriendship(residentId, friendId);
+		Optional<FriendshipEntity> optionalFriendship = dataService.findFriendship(residentId, friendId);
 
 		try {
-			// Return false if accepted, because it means it isn't pending
-			if (friendship.get().isAccepted()) {
-				return new FriendshipModel(friendship.get().getInvitorId(), friendship.get().getInviteeId(), false);
-			}
-			// Return a friendship, where pending is true because someone hasn't accepted
-			return new FriendshipModel(friendship.get().getInvitorId(), friendship.get().getInviteeId(), true);
+			FriendshipEntity friendship = optionalFriendship.get(); //error handling
+
+			return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+			// // Return false if accepted, because it means it isn't pending
+			// if (friendship.get().isAccepted()) {
+			// 	return new FriendshipModel(friendship.get().getInvitorId(), friendship.get().getInviteeId(), false);
+			// }
+			// // Return a friendship, where pending is true because someone hasn't accepted
+			// return new FriendshipModel(friendship.get().getInvitorId(), friendship.get().getInviteeId(), true);
 		}
 		// If friendship doesn't exist, throw an exception
 		catch (Exception e) {
 			throw new NoSuchElementException("Not Found. Friendship does not exist.");
 		}
+	}
+
+	public ResidentModel getResident(UUID residentId) {
+		ResidentEntity residentEntity = dataService.findResidentById(residentId);
+
+		ResidentModel resident = new ResidentModel(
+			residentEntity.getAge(),
+			residentEntity.getHometown(), 
+			residentEntity.getBiography(),
+			residentEntity.getProfilePhoto(),
+			residentEntity.getBackgroundPhoto(),
+			residentEntity.getInstagram(),
+			residentEntity.getSnapchat(),
+			residentEntity.getX(),
+			residentEntity.getFacebook(),
+			residentEntity.getId(),
+			residentEntity.getFirstName(),
+			residentEntity.getLastName(),
+			residentEntity.getGender());
+
+			return resident;
+	}
+
+	public boolean updateResident(UUID residentId, OptionalResidentModel residentInfo) {
+		
+			// If not in the response, string will be null, number will be 0
+			//check to see if the database matches the request
+			ResidentEntity resident = dataService.findResidentById(residentId);
+
+			if(resident.getAge() != 0){
+			resident.setAge(resident.getAge());
+			}
+			if(resident.getHometown() != null){
+			resident.setHometown(resident.getHometown());
+			}
+			if(resident.getProfilePhoto() != null){
+				resident.setProfilePhoto(resident.getProfilePhoto());
+			}
+			if(resident.getBackgroundPhoto() != null){
+				resident.setBackgroundPhoto(resident.getBackgroundPhoto());
+			}
+			if(resident.getInstagram() != null){
+				resident.setInstagram(resident.getInstagram());
+			}
+			if(resident.getSnapchat() != null){
+				resident.setSnapchat(resident.getSnapchat());
+			}
+			if(resident.getX() != null){
+				resident.setX(resident.getX());
+			}
+			if(resident.getFacebook() != null){
+				resident.setFacebook(resident.getFacebook());
+			}
+
+			// Could I try to return boolean
+			ResidentEntity updated = dataService.updateResident(resident);
+
+			if(updated == resident){
+				return true;
+			}
+
+			return false;
+
+			//resident.save(resident)
+
+			//ResidentEntity res = dataService.updateResidentById(residentId, )
+	}
+
+	public FriendshipModel updateFriendship(UUID invitorId, UUID inviteeId, boolean isAccepted) throws Exception {
+		// TODO: make sure they are valid neighbors
+		FriendshipEntity friendship = dataService.updateFriendship(invitorId, inviteeId, isAccepted);
+		return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
 	}
 
 	// TODO: get unit - show an error if no units are registered

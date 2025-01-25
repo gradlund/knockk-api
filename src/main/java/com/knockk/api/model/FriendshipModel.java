@@ -10,7 +10,7 @@ public class FriendshipModel {
 
     private UUID invitorId;
     private UUID inviteeId;
-    private boolean isPending;
+    private boolean isAccepted;
 
     public UUID getInvitorId() {
         return invitorId;
@@ -20,13 +20,13 @@ public class FriendshipModel {
         return inviteeId;
     }
 
-    public boolean isPending() {
-        return isPending;
+    public boolean isAccepted() {
+        return isAccepted;
     }
 
-    public FriendshipModel(UUID invitorId, UUID inviteeId, boolean isPending) {
+    public FriendshipModel(UUID invitorId, UUID inviteeId, boolean isAccepted) {
         this.invitorId = invitorId;
         this.inviteeId = inviteeId;
-        this.isPending = isPending;
+        this.isAccepted = isAccepted;
     }
 }

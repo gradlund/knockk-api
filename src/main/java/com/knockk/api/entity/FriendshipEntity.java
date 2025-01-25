@@ -26,7 +26,7 @@ public class FriendshipEntity {
     private UUID inviteeId;
 
     @Column("accepted")
-    private boolean accepted;
+    private boolean accepted; //this will alter the response
 
     public UUID getInvitorId() {
         return invitorId;
@@ -40,6 +40,10 @@ public class FriendshipEntity {
         return accepted;
     }
 
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
+    }
+
     public FriendshipEntity(UUID id, Date createdAt, UUID invitorId, UUID inviteeId, boolean accepted) {
         this.id = id;
         this.createdAt = createdAt;
@@ -47,5 +51,4 @@ public class FriendshipEntity {
         this.inviteeId = inviteeId;
         this.accepted = accepted;
     }
-
 }
