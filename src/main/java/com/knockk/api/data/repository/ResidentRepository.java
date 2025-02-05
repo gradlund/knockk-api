@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.knockk.api.entity.ResidentEntity;
 
@@ -53,9 +55,23 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	 * @param room  : the unit is in
 	 * @return a list of ids of residents in that unit
 	 */
-	@Query(value = "select \"Resident\".resident_id from \"Unit\"" +
+	@Query(value = "SELECT \"Resident\".resident_id from \"Unit\"" +
 			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
 			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
 			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
 	List<UUID> findResidentsByUnit(int floor, int room);
+
+	@Modifying
+	@Transactional
+	// @Query(value = "UPDATE \"Resident\" SET age = :age, hometown = :hometown, biography = :biography, profile_photo = :profilePhoto::jsonb, " +
+	// " background_photo = :backgroundPhoto::jsonb, instagram = :instagram, snapchat = :snapchat, x = :x, facebook = facebook " +
+	// " WHERE \"Resident\".resident_id = :id")
+	@Query(value = "UPDATE \"Resident\" SET age = :age, hometown = :hometown, biography = :biography, " +
+	// "profile_photo = CAST('\"' || :profilePhoto || '\"' AS JSONB), " +
+    //            "background_photo = CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
+	"profile_photo = CAST('\"' || :profilePhoto || '\"' AS JSONB), " +
+               "background_photo = CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
+	"instagram = :instagram, snapchat = :snapchat, x = :x, facebook = facebook " +
+	" WHERE \"Resident\".resident_id = :id")
+    int update(int age, String hometown, String biography, String profilePhoto, String backgroundPhoto, String instagram, String snapchat, String x, String facebook, UUID id);
 }

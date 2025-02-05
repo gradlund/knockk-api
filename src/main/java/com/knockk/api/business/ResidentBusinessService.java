@@ -162,6 +162,10 @@ public class ResidentBusinessService {
 
 	}
 
+	public boolean deleteFriendship(UUID residentId, UUID friendId) throws Exception {
+		return dataService.deleteFriendship(residentId, friendId);
+	}
+
 	/**
 	 * Retrieves information about a friendship. Used to see if a friendship is
 	 * pending.
@@ -218,35 +222,45 @@ public class ResidentBusinessService {
 			return resident;
 	}
 
-	public boolean updateResident(UUID residentId, OptionalResidentModel residentInfo) {
+	public boolean updateResident(UUID residentId, OptionalResidentModel residentInfo) throws Exception {
 		
 			// If not in the response, string will be null, number will be 0
 			//check to see if the database matches the request
 			ResidentEntity resident = dataService.findResidentById(residentId);
 
-			if(resident.getAge() != 0){
-			resident.setAge(resident.getAge());
+			System.out.println(resident.getX() + "not updated");
+
+			//What is this chekc really doing?
+			if(residentInfo.getAge() != 0){
+			resident.setAge(residentInfo.getAge());
 			}
-			if(resident.getHometown() != null){
-			resident.setHometown(resident.getHometown());
+
+			if(residentInfo.getHometown() != null){
+			resident.setHometown(residentInfo.getHometown());
 			}
-			if(resident.getProfilePhoto() != null){
-				resident.setProfilePhoto(resident.getProfilePhoto());
+			if(residentInfo.getBiography() != null){
+				resident.setBiography(residentInfo.getBiography());
 			}
-			if(resident.getBackgroundPhoto() != null){
-				resident.setBackgroundPhoto(resident.getBackgroundPhoto());
+			if(residentInfo.getProfilePhoto() != null){
+				System.out.println(residentInfo.getProfilePhoto().substring(0, 15));
+				resident.setProfilePhoto(residentInfo.getProfilePhoto());
 			}
-			if(resident.getInstagram() != null){
-				resident.setInstagram(resident.getInstagram());
+			if(residentInfo.getBackgroundPhoto() != null){
+				System.out.println(residentInfo.getBackgroundPhoto().substring(0, 15));
+				resident.setBackgroundPhoto(residentInfo.getBackgroundPhoto());
 			}
-			if(resident.getSnapchat() != null){
-				resident.setSnapchat(resident.getSnapchat());
+			if(residentInfo.getInstagram() != null){
+				resident.setInstagram(residentInfo.getInstagram());
 			}
-			if(resident.getX() != null){
-				resident.setX(resident.getX());
+			if(residentInfo.getSnapchat() != null){
+				resident.setSnapchat(residentInfo.getSnapchat());
 			}
-			if(resident.getFacebook() != null){
-				resident.setFacebook(resident.getFacebook());
+			if(residentInfo.getX() != null){
+				System.out.println(residentInfo.getX() + "to update");
+				resident.setX(residentInfo.getX());
+			}
+			if(residentInfo.getFacebook() != null){
+				resident.setFacebook(residentInfo.getFacebook());
 			}
 
 			// Could I try to return boolean
@@ -265,6 +279,7 @@ public class ResidentBusinessService {
 
 	public FriendshipModel updateFriendship(UUID invitorId, UUID inviteeId, boolean isAccepted) throws Exception {
 		// TODO: make sure they are valid neighbors
+		System.out.println(isAccepted);
 		FriendshipEntity friendship = dataService.updateFriendship(invitorId, inviteeId, isAccepted);
 		return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
 	}

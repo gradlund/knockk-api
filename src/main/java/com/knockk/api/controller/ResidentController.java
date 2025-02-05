@@ -30,6 +30,7 @@ import com.knockk.api.model.UserModel;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -56,7 +57,6 @@ public class ResidentController {
 		try {
 			// Update the friendship (create one)
 			FriendshipModel friendship = service.updateFriendship(friendshipRequest.getInvitorId(), friendshipRequest.getInviteeId(), friendshipRequest.isAccepted());
-
 
 			// ResponseModel with a list of neighboring rooms, message, and status code
 			ResponseModel<FriendshipModel> response = new ResponseModel<FriendshipModel>(friendship,
@@ -93,6 +93,9 @@ public class ResidentController {
 			UUID residentId = UUID.fromString(id);
 			UUID neighborId = UUID.fromString(friendId);
 
+			System.out.println(residentId);
+			System.out.println(neighborId);
+
 			// Retrieve the friendship (if one exists)
 			FriendshipModel friendship = service.getFriendship(residentId, neighborId);
 
@@ -102,6 +105,38 @@ public class ResidentController {
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	@DeleteMapping("/{residentId}/friendship/{friendId}")
+	public ResponseEntity<?> deleteFriendship(@PathVariable("residentId") String id,
+			@PathVariable("friendId") String friendId) {
+		try {
+			// Retrieve the id's from the parameters
+			UUID residentId = UUID.fromString(id);
+			UUID neighborId = UUID.fromString(friendId);
+
+			System.out.println("Delete friendship");
+
+			// Retrieve the friendship (if one exists)
+			boolean isDeleted = service.deleteFriendship(residentId, neighborId);
+
+			// If it has been deleted, return response
+			if(isDeleted){
+				//List<String, String> data = 
+			ResponseModel<String> response = new ResponseModel<String>("Success. Deleted friendship.",
+					"Success", 204);
+			
+			// Return response
+			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.OK);
+			}
+			else{
+				throw new Exception("Error deleting friendship.");
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 
@@ -217,19 +252,16 @@ public class ResidentController {
 		try {
 			UUID residentId = UUID.fromString(id);
 
-			System.out.println(residentInfo.getX());
+			System.out.println(residentInfo.getBiography());
 
 			boolean updated = service.updateResident(residentId, residentInfo);
-
-			TestOptional test = new TestOptional(null, null, null);
-			// TODO: Should return error if resident id is wrong?
-			//List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
+			System.out.println(updated);
 
 			// ResponseModel with a list of neighboring rooms, message, and status code
-			ResponseModel<TestOptional> response = new ResponseModel<TestOptional>(test,
+			ResponseModel<OptionalResidentModel> response = new ResponseModel<OptionalResidentModel>(residentInfo,
 					"Success", 200);
 			// Return response
-			return new ResponseEntity<ResponseModel<TestOptional>>(response, HttpStatus.OK);
+			return new ResponseEntity<ResponseModel<OptionalResidentModel>>(response, HttpStatus.OK);
 		} catch (Exception e) {
 			e.printStackTrace();
 

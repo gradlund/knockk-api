@@ -250,8 +250,8 @@ public class ResidentDataService {
 	}
 
 	public ResidentEntity findResidentById(UUID residentId) {
-        return getResidentEntity(residentId);
-    }
+		return getResidentEntity(residentId);
+	}
 
 	/**
 	 * Retrieves a unit by the id of the unit
@@ -378,52 +378,82 @@ public class ResidentDataService {
 		return resident.get(0);
 	}
 
-	public ResidentEntity updateResident(ResidentEntity resident) {
-		return residentRepository.save(resident);
+	public ResidentEntity updateResident(ResidentEntity resident) throws Exception {
+		// return residentRepository.save(resident);
+		System.out.println(resident.getProfilePhoto().substring(0, 5));
+		int rows = residentRepository.update(resident.getAge(), resident.getHometown(), resident.getBiography(),
+				resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(),
+				resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getId());
+		System.out.println(rows);
+
+		if (rows == 1) {
+			return resident;
+		}
+		throw new Exception("Couldn't update resident.");
+	}
+
+	public boolean deleteFriendship(UUID resident, UUID friend) throws Exception {
+			int rows =  friendshipRepository.deleteFriendship(resident, friend);
+			if(rows == 1){
+				return true;
+			}
+			else{
+				throw new Exception("Problem deleting friendship");
+			}
 	}
 
 	public FriendshipEntity updateFriendship(UUID invitorId, UUID inviteeId, boolean isAccepted) throws Exception {
-		//FriendshipEntity friendship = friendshipRepository.save(new FriendshipEntity(invitorId, inviteeId, isAccepted));
-		// String sql = "INSERT INTO \"Frienship\" (invitor_id)WHERE resident_id = '" + id + "'";
+		// FriendshipEntity friendship = friendshipRepository.save(new
+		// FriendshipEntity(invitorId, inviteeId, isAccepted));
+		// String sql = "INSERT INTO \"Frienship\" (invitor_id)WHERE resident_id = '" +
+		// id + "'";
 		// int friendshipRows = jdbcTemplateObject.update(sql, new ResidentMapper());
-		//int rows = friendshipRepository.updateFriendship(invitorId, inviteeId, isAccepted);
-		//System.out.println(rows);
-		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId);
-		
+		// int rows = friendshipRepository.updateFriendship(invitorId, inviteeId,
+		// isAccepted);
+		// System.out.println(rows);
+		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(invitorId,
+				inviteeId);
+
 		// If a friendship exists, update the friendship
-		if(friendship.isPresent()){
+		if (friendship.isPresent()) {
 			FriendshipEntity updateFriendship = friendship.get();
-			if(updateFriendship.isAccepted() == isAccepted){
-				
-				System.out.println("Nothign to update; same friendship.");
-				throw new Exception("Nothing to update.");
-			}
+			// if (updateFriendship.isAccepted() == isAccepted) {
 
-else{			updateFriendship.setAccepted(isAccepted);
-			System.out.println("Friendship updated");
-			return friendshipRepository.save(updateFriendship);
-}
-			//return friendshipRepository.updateFriendship(invitorId, inviteeId, isAccepted);
+			// 	System.out.println("Nothing to update; same friendship.");
+			// 	throw new Exception("Nothing to update.");
+			// }
+
+			// else {
+				updateFriendship.setAccepted(isAccepted);
+				System.out.println("Friendship updated");
+				return friendshipRepository.save(updateFriendship);
+			// }
+			// return friendshipRepository.updateFriendship(invitorId, inviteeId,
+			// isAccepted);
 		}
+		else{
 
-
-		System.out.println("Friendship does not exist");
-		//Else create a friendship
+		System.out.println("Friendship does not exist. Add friendship");
+		// throw an error
+		
+		// Else create a friendship
 		// Doing the save method - what happens if I don't want to send id or date?
-		//return friendshipRepository.save(new FriendshipEntity(inviteeId, null, invitorId, inviteeId, isAccepted))
-		//String sql = "INSERT INTO \"Friendship\" (invitor_id, invitee_id, accepted ) VALUES (" + invitorId + ", " + inviteeId + ", " +isAccepted + ")";
-		//int friendshipRows = jdbcTemplateObject.update(sql, new FriendshipMapper());
+		// return friendshipRepository.save(new FriendshipEntity(inviteeId, null,
+		// invitorId, inviteeId, isAccepted))
+		// String sql = "INSERT INTO \"Friendship\" (invitor_id, invitee_id, accepted )
+		// VALUES (" + invitorId + ", " + inviteeId + ", " +isAccepted + ")";
+		// int friendshipRows = jdbcTemplateObject.update(sql, new FriendshipMapper());
 		UUID rows = friendshipRepository.addFriendship(invitorId, inviteeId, isAccepted);
-		//System.out.println(friendshipRows);
-		//if(rows. ){
-			System.out.println("Friendship created.");
-			return friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId).get();
-		//}
+		// System.out.println(friendshipRows);
+		// if(rows. ){
+		System.out.println("Friendship created.");
+		return friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId).get();
+		// }
 
 		// Fiz I don't want to HAVE to do this
-		//return new FriendshipEntity(inviteeId, null, invitorId, inviteeId, isAccepted);
+		// return new FriendshipEntity(inviteeId, null, invitorId, inviteeId,
+		// isAccepted);
+		}
 	}
-
-    
 
 }
