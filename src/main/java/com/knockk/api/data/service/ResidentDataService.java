@@ -1,6 +1,5 @@
 package com.knockk.api.data.service;
 
-import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -23,8 +22,6 @@ import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
-import com.knockk.api.entity.UnitResidentEntity;
-import com.knockk.api.data.mapper.FriendshipMapper;
 import com.knockk.api.data.mapper.ResidentMapper;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
@@ -68,10 +65,6 @@ public class ResidentDataService {
 		this.residentRepository = residentRepository;
 		this.jdbcTemplateObject = new JdbcTemplate(dataSource);
 	}
-
-	// TODO - logic won't work if 329 is in system, change lowest level to 4 - it
-	// will still return rooms to the right
-	// like 330, but not any floors above. wait that's what I want....
 
 	/**
 	 * Checks to see if the building has a room above that the resident is neighbors
@@ -153,13 +146,6 @@ public class ResidentDataService {
 		return true;
 	}
 
-	// do not think this is neccesary. When a resident clicks on a room it will
-	// return a list of residents - or null if no residents are registered
-	public void findIfUnitHasRegisteredResident(int floor, int room) {
-		// TODO: better naming conventions
-		// return residentRepository.findIfUserExistsByUnit(floor, room);
-	}
-
 	/***
 	 * Finds if the resident is verified.
 	 * NOTE: does not use the repository because there is an error with the PGObject
@@ -186,7 +172,78 @@ public class ResidentDataService {
 		return resident.get(0).isVerified();
 	}
 
-	// TODO - should probably refactor so that I'm not throwing an error
+	/**
+	 * Creates a friendship.
+	 * 
+	 * @param invitorId : id of the resident who sent the request.
+	 * @param inviteeId : id of the resident receiving the request.
+	 * @return a friendship entity containing details about the friendship.
+	 * @throws Exception thrown if there is a problem creating
+	 */
+	public FriendshipEntity createFriendship(UUID invitorId, UUID inviteeId) throws Exception {
+		// Retrieve a friendship (should not exist because we will be creating one)
+		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(invitorId,
+				inviteeId);
+
+		// Make sure a friendship doesn't exist
+		if (!friendship.isPresent()) {
+			// Is accepted will always be false when creating a friendship
+			UUID rows = friendshipRepository.addFriendship(invitorId, inviteeId, false);
+			System.out.println(rows);
+			return friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId).get();
+		}
+		// Throw an exception if the friendship could not be created
+		else {
+			throw new Exception("Problem creating a friendship.");
+		}
+	}
+
+	/**
+	 * Checks to see if two residents are friends.
+	 * 
+	 * NOTE: neighbors don't always have a friendship relationship.
+	 * 
+	 * @param residentId : id of the resident (user)
+	 * @param friendId   : id of the friend (neighbor)
+	 * @return a boolean - true if connected, false if not connected or a friendship
+	 *         doesn't exist
+	 */
+	public boolean checkConnected(UUID residentId, UUID friendId) {
+		// Retrieve a frindship given the resident and friend is
+		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(residentId,
+				friendId);
+
+		// Check for optional, meaning no friendship exists
+		if (!friendship.isPresent()) {
+			return false;
+		}
+		// Return accepted
+		return friendship.get().isAccepted();
+	}
+
+	/**
+	 * Deletes a friendship.
+	 * 
+	 * @param residentId : id of the resident who no longer wants a friendship.
+	 * @param friendId   : id of the resident who the resident no longer wants a
+	 *                   friendship with.
+	 * @return a boolean if the friendship has been successfully deleted.
+	 * @throws Exception thrown if there is a problem deleting the friendship.
+	 */
+	public boolean deleteFriendship(UUID residentId, UUID friendId) throws Exception {
+		// Use the friendship repository to delete a friendship
+		int rows = friendshipRepository.deleteFriendship(residentId, friendId);
+
+		// If it returns 1, the row has successfully been deleted
+		if (rows == 1) {
+			return true;
+		}
+		// Otherwise throw an error because there was a problem deleting the friendship
+		else {
+			throw new Exception("Problem deleting friendship.");
+		}
+	}
+
 	/**
 	 * Retrieves the friendship of two residents
 	 * 
@@ -200,7 +257,18 @@ public class ResidentDataService {
 				friendId);
 	}
 
-	// TODO: write tests and javadocs
+	/**
+	 * Retrieve a list of resident ids who live in a unit.
+	 * 
+	 * @param floor : floor the unit is on
+	 * @param room  : room the unit is in
+	 * @return a list of ids
+	 */
+	public List<UUID> findNeighborsByUnit(int floor, int room) {
+		// Return the list of ids
+		return residentRepository.findResidentsByUnit(floor, room);
+	}
+
 	/**
 	 * Retrieves the id of the unit by the id of the resident
 	 * 
@@ -249,6 +317,12 @@ public class ResidentDataService {
 		return id.get();
 	}
 
+	/**
+	 * Finds a resident by their id
+	 * 
+	 * @param residentId : id of the resident
+	 * @return a resident entity
+	 */
 	public ResidentEntity findResidentById(UUID residentId) {
 		return getResidentEntity(residentId);
 	}
@@ -269,42 +343,6 @@ public class ResidentDataService {
 
 		// Return the unit
 		return unit.get();
-	}
-
-	/**
-	 * Retrieve a list of resident ids who live in a unit.
-	 * 
-	 * @param floor : floor the unit is on
-	 * @param room  : room the unit is in
-	 * @return a list of ids
-	 */
-	public List<UUID> findNeighborsByUnit(int floor, int room) {
-		// Return the list of ids
-		return residentRepository.findResidentsByUnit(floor, room);
-	}
-
-	/**
-	 * Checks to see if two residents are friends.
-	 * 
-	 * NOTE: neighbors don't always have a friendship relationship.
-	 * 
-	 * @param residentId : id of the resident (user)
-	 * @param friendId   : id of the friend (neighbor)
-	 * @return a boolean - true if connected, false if not connected or a friendship
-	 *         doesn't exist
-	 */
-	public boolean checkConnected(UUID residentId, UUID friendId) {
-		// Retrieve a frindship given the resident and friend is
-		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(residentId,
-				friendId);
-
-		// Check for optional, meaning no friendship exists
-		if (!friendship.isPresent()) {
-			return false;
-		}
-		// Return accepted
-		return friendship.get().isAccepted();
-
 	}
 
 	// TODO: do I need to retrieve the whole residententity?
@@ -350,20 +388,18 @@ public class ResidentDataService {
 			return null;
 
 		return resident.getProfilePhoto();
-
 	}
 
-	// This method handles errors
-	// residentrepository.findbyId doesn't work with the mapper
 	/**
+	 * Retrieves a resident.
+	 * 
 	 * NOTE: does not use the repository because there is an error with the
-	 * PGObject
-	 * convertor...
+	 * PGObject convertor...
 	 * Have to use the convertor because some types in Supabase need to be converted
 	 * (like jsonb)
 	 * 
-	 * @param id
-	 * @return
+	 * @param id : id of the resident
+	 * @return a resident entity
 	 */
 	public ResidentEntity getResidentEntity(UUID id) {
 		// TODO: switch to using repository or using prepared statement
@@ -375,85 +411,62 @@ public class ResidentDataService {
 		if (resident.isEmpty()) {
 			throw new NoSuchElementException("Problem retrieving resident.");
 		}
+		// Return the resident
 		return resident.get(0);
 	}
 
-	public ResidentEntity updateResident(ResidentEntity resident) throws Exception {
-		// return residentRepository.save(resident);
-		System.out.println(resident.getProfilePhoto().substring(0, 5));
-		int rows = residentRepository.update(resident.getAge(), resident.getHometown(), resident.getBiography(),
-				resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(),
-				resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getId());
-		System.out.println(rows);
-
-		if (rows == 1) {
-			return resident;
-		}
-		throw new Exception("Couldn't update resident.");
-	}
-
-	public boolean deleteFriendship(UUID resident, UUID friend) throws Exception {
-			int rows =  friendshipRepository.deleteFriendship(resident, friend);
-			if(rows == 1){
-				return true;
-			}
-			else{
-				throw new Exception("Problem deleting friendship");
-			}
-	}
-
+	/**
+	 * Updates a friendship.
+	 * 
+	 * @param invitorId  : id of the resident who sent the request.
+	 * @param inviteeId  : id of the resident receiving the request.
+	 * @param isAccepted : boolean if the resident who received the request has
+	 *                   accepted the invite.
+	 * @return a friendship entity containing details about the friendship.
+	 * @throws Exception thrown if there is a problem retrieving or updating the
+	 *                   friendship
+	 */
 	public FriendshipEntity updateFriendship(UUID invitorId, UUID inviteeId, boolean isAccepted) throws Exception {
-		// FriendshipEntity friendship = friendshipRepository.save(new
-		// FriendshipEntity(invitorId, inviteeId, isAccepted));
-		// String sql = "INSERT INTO \"Frienship\" (invitor_id)WHERE resident_id = '" +
-		// id + "'";
-		// int friendshipRows = jdbcTemplateObject.update(sql, new ResidentMapper());
-		// int rows = friendshipRepository.updateFriendship(invitorId, inviteeId,
-		// isAccepted);
-		// System.out.println(rows);
+
+		// Retrieve the friendship
 		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(invitorId,
 				inviteeId);
 
 		// If a friendship exists, update the friendship
 		if (friendship.isPresent()) {
 			FriendshipEntity updateFriendship = friendship.get();
-			// if (updateFriendship.isAccepted() == isAccepted) {
+			// Update if the invitee has accepted the invite
+			updateFriendship.setAccepted(isAccepted);
 
-			// 	System.out.println("Nothing to update; same friendship.");
-			// 	throw new Exception("Nothing to update.");
-			// }
-
-			// else {
-				updateFriendship.setAccepted(isAccepted);
-				System.out.println("Friendship updated");
-				return friendshipRepository.save(updateFriendship);
-			// }
-			// return friendshipRepository.updateFriendship(invitorId, inviteeId,
-			// isAccepted);
+			// Save the updated friendship
+			return friendshipRepository.save(updateFriendship); // TODO: does this need error handling?
 		}
-		else{
-
-		System.out.println("Friendship does not exist. Add friendship");
-		// throw an error
-		
-		// Else create a friendship
-		// Doing the save method - what happens if I don't want to send id or date?
-		// return friendshipRepository.save(new FriendshipEntity(inviteeId, null,
-		// invitorId, inviteeId, isAccepted))
-		// String sql = "INSERT INTO \"Friendship\" (invitor_id, invitee_id, accepted )
-		// VALUES (" + invitorId + ", " + inviteeId + ", " +isAccepted + ")";
-		// int friendshipRows = jdbcTemplateObject.update(sql, new FriendshipMapper());
-		UUID rows = friendshipRepository.addFriendship(invitorId, inviteeId, isAccepted);
-		// System.out.println(friendshipRows);
-		// if(rows. ){
-		System.out.println("Friendship created.");
-		return friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId).get();
-		// }
-
-		// Fiz I don't want to HAVE to do this
-		// return new FriendshipEntity(inviteeId, null, invitorId, inviteeId,
-		// isAccepted);
+		// Throw an exception if a friendship does not exist
+		else {
+			throw new Exception("Friendship could not be found. Try creating a friendship.");
 		}
 	}
 
+	/**
+	 * Updates a resident.
+	 * 
+	 * @param resident : resident entity used to update the resident
+	 * @return a resident entity
+	 * @throws Exception if the resident could not be updated
+	 */
+	public ResidentEntity updateResident(ResidentEntity resident) throws Exception {
+		// Update the resident
+		int rows = residentRepository.update(resident.getAge(), resident.getHometown(), resident.getBiography(),
+				resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(),
+				resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getId());
+
+		// If one row was updated, return the resident
+		if (rows == 1) {
+			return residentRepository.findById(resident.getId()).get(); // TODO - could I delete this extra call and
+																		// just return the entity passed intot the
+																		// function?
+		}
+		// Else throw exception
+		throw new Exception("Couldn't update resident.");
+	}
 }

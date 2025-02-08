@@ -3,7 +3,6 @@ package com.knockk.api.controller;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +22,6 @@ import com.knockk.api.model.NeighborRoomModel;
 import com.knockk.api.model.OptionalResidentModel;
 import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.ResponseModel;
-import com.knockk.api.model.TestOptional;
 import com.knockk.api.model.UnitResidentModel;
 import com.knockk.api.model.UserModel;
 
@@ -32,8 +30,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 /**
  * This class is the rest controller the admin application consumes
@@ -47,23 +43,37 @@ public class ResidentController {
 	private @Autowired ResidentBusinessService service;
 
 	/**
-	 * Is pending will be faale, if they accepted
-	 * @param friendshipRequest
-	 * @return
+	 * Creates a friendship between two residents, by resident id and neighbor's
+	 * resident id.
+	 * 
+	 * Used when a resident makes a request to connect with their neighbor. Defaults
+	 * accepted to false.
+	 * 
+	 * @param friendshipRequest : model used in the request
+	 * @return a ResponseEntity with a status code, message, and data
 	 */
 	@PostMapping("/friendship")
-	public ResponseEntity<?> createFriendship(@RequestBody FriendshipModel friendshipRequest) {
-		// Get resident
+	public ResponseEntity<?> createFriendship(@RequestBody FriendshipModel friendshipRequest, Errors errors) {
 		try {
-			// Update the friendship (create one)
-			FriendshipModel friendship = service.updateFriendship(friendshipRequest.getInvitorId(), friendshipRequest.getInviteeId(), friendshipRequest.isAccepted());
+			// If the request does not contain the valid model, throw an exception
+			if (errors.hasErrors())
+				throw new IllegalArgumentException("Bad request");
 
-			// ResponseModel with a list of neighboring rooms, message, and status code
+			// Update friendship (create one) using the invitor's id, invitee's id, and if
+			// accepted (which should be false if creating one)
+			// isAccepted field is not used from the request
+			FriendshipModel friendship = service.createFriendship(friendshipRequest.getInvitorId(),
+					friendshipRequest.getInviteeId());
+
+			// ResponseModel with the friendship model, message, and status code
 			ResponseModel<FriendshipModel> response = new ResponseModel<FriendshipModel>(friendship,
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
-		} catch (Exception e) {
+
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
@@ -78,8 +88,7 @@ public class ResidentController {
 	 * A friendship that doesn't exist will throw a 404 error.
 	 * 
 	 * NOTE: Should ensure that the friend is a neighbor of the resident. May not be
-	 * necessary because
-	 * viewing a room fetches if there is a friendship or not.
+	 * necessary because viewing a room fetches if there is a friendship or not.
 	 * 
 	 * @param id       : id of the resident
 	 * @param friendId : if of the neighboring resident
@@ -93,9 +102,6 @@ public class ResidentController {
 			UUID residentId = UUID.fromString(id);
 			UUID neighborId = UUID.fromString(friendId);
 
-			System.out.println(residentId);
-			System.out.println(neighborId);
-
 			// Retrieve the friendship (if one exists)
 			FriendshipModel friendship = service.getFriendship(residentId, neighborId);
 
@@ -105,13 +111,25 @@ public class ResidentController {
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
-		} catch (Exception e) {
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
 		}
 	}
 
+	/**
+	 * Removes a friendship, by resident id and freind's resident id.
+	 * 
+	 * Used when a resident unconnects with a friend.
+	 * 
+	 * @param id       : id of the resident trying to remove the friendship
+	 * @param friendId : id of the friend the resident no longer wants to be friends
+	 *                 with
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@DeleteMapping("/{residentId}/friendship/{friendId}")
 	public ResponseEntity<?> deleteFriendship(@PathVariable("residentId") String id,
 			@PathVariable("friendId") String friendId) {
@@ -120,24 +138,24 @@ public class ResidentController {
 			UUID residentId = UUID.fromString(id);
 			UUID neighborId = UUID.fromString(friendId);
 
-			System.out.println("Delete friendship");
-
-			// Retrieve the friendship (if one exists)
+			// Delete the friendship (if one exists)
 			boolean isDeleted = service.deleteFriendship(residentId, neighborId);
 
 			// If it has been deleted, return response
-			if(isDeleted){
-				//List<String, String> data = 
-			ResponseModel<String> response = new ResponseModel<String>("Success. Deleted friendship.",
-					"Success", 204);
-			
-			// Return response
-			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.OK);
+			if (isDeleted) {
+				ResponseModel<String> response = new ResponseModel<String>("Success. Deleted friendship.",
+						"Success", 204);
+
+				// Return response
+				return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.OK);
 			}
-			else{
+			// If friendship was not deleted, throw an exception
+			else {
 				throw new Exception("Error deleting friendship.");
 			}
-		} catch (Exception e) {
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
@@ -197,10 +215,12 @@ public class ResidentController {
 	 */
 	@GetMapping("/{residentId}/neighbor-units")
 	public ResponseEntity<?> getNeighborUnits(@PathVariable("residentId") String id) {
-		// Get neighboring units
 		try {
+			// Retrieve the resident's id from the path parameters
 			UUID residentId = UUID.fromString(id);
+
 			// TODO: Should return error if resident id is wrong?
+			// Retrieve a list of neighboring units
 			List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
 
 			// ResponseModel with a list of neighboring rooms, message, and status code
@@ -208,70 +228,99 @@ public class ResidentController {
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<List<NeighborRoomModel>>>(response, HttpStatus.OK);
-		} catch (Exception e) {
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
 		}
 	}
 
+	/**
+	 * Show details of a resident, by resident id.
+	 * 
+	 * Used when displaying the resident profile, or when viewing a connected
+	 * neighbor. Not necessary for displaying an unconnected neighbor because that
+	 * only displays their name, which is fetched in the
+	 * /residents/{residentId}/neighbor-rooms/{unit-id} call.
+	 * 
+	 * @param id : id of the resident
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@GetMapping("/{residentId}")
 	public ResponseEntity<?> getResident(@PathVariable("residentId") String id) {
-		// Get resident
 		try {
+			// Retrieve the resident's id from the path variable
 			UUID residentId = UUID.fromString(id);
 
 			// Retrieve resident by id
 			ResidentModel resident = service.getResident(residentId);
-
-			//System.out.println(resident.g)
-
-			// Optional<String> hm = Optional.of("ji");
-			// hm.empty();
-
-			// TestOptional test = new TestOptional(null, hm, null);
-			// // TODO: Should return error if resident id is wrong?
-			// //List<NeighborRoomModel> neighbors = service.getNeighborUnits(residentId);
 
 			// ResponseModel with a list of neighboring rooms, message, and status code
 			ResponseModel<ResidentModel> response = new ResponseModel<ResidentModel>(resident,
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<ResidentModel>>(response, HttpStatus.OK);
-		} catch (Exception e) {
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
 		}
 	}
 
-	
+	/**
+	 * Update a resident, by resident id. Only voluntary information upon
+	 * registration can be updated.
+	 * 
+	 * Used when the resident wants to update their profile. Resident should not be
+	 * able to update their name, gender, or information pertaining to their lease.
+	 * Resident should only be able to update their own profile.
+	 * 
+	 * @param id           : id of the resident
+	 * @param residentInfo : model sent in the request that has optional fields the
+	 *                     resident can update
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@PostMapping("/{residentId}")
-	public ResponseEntity<?> updateResident(@PathVariable("residentId") String id, @RequestBody OptionalResidentModel residentInfo) {
-		// Get resident
+	public ResponseEntity<?> updateResident(@PathVariable("residentId") String id,
+			@RequestBody OptionalResidentModel residentInfo) {
 		try {
+			// Retrieve the resident's id from the path variable
 			UUID residentId = UUID.fromString(id);
 
-			System.out.println(residentInfo.getBiography());
-
+			// Update the resident using the business service class
+			// Data service class throws an error if resident could not be updated
 			boolean updated = service.updateResident(residentId, residentInfo);
-			System.out.println(updated);
 
+			// If updated, send back a response
+			// if (updated) {
 			// ResponseModel with a list of neighboring rooms, message, and status code
 			ResponseModel<OptionalResidentModel> response = new ResponseModel<OptionalResidentModel>(residentInfo,
 					"Success", 200);
 			// Return response
 			return new ResponseEntity<ResponseModel<OptionalResidentModel>>(response, HttpStatus.OK);
-		} catch (Exception e) {
+			// }
+			// // Else, throw an exception
+			// else {
+			// throw new Exception("Resident was not updated.");
+			// }
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
 		}
 	}
-	
 
 	/**
 	 * Logs the user in
+	 * 
+	 * Used when the resident logs in to the app. Verifies the credentials in the
+	 * database. Important to note that the password will be hashed.
 	 * 
 	 * @param credentials : credentials passed by the admin in the request
 	 * @param errors      : data-binding and validation errors relating to the
@@ -282,15 +331,20 @@ public class ResidentController {
 	@ResponseBody
 	public ResponseEntity<?> login(@Valid @RequestBody UserModel credentials, Errors errors) {
 		try {
+			// If the request does not contain the valid model, throw an exception
 			if (errors.hasErrors())
 				throw new IllegalArgumentException("Bad request");
 
+			// Otherwise, log the user in using the credentials
 			LoginModel user = service.login(credentials);
 
+			// Return a response
 			ResponseModel<LoginModel> response = new ResponseModel<LoginModel>(user, "Login Successful", 204);
 			return new ResponseEntity<ResponseModel<LoginModel>>(response, HttpStatus.OK); // using NO_CONTENT will not
 																							// return a response body
-		} catch (Exception e) {
+		}
+		// Handle errors
+		catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
@@ -308,6 +362,7 @@ public class ResidentController {
 		data.put("Error", e.getMessage());
 
 		ResponseModel<HashMap<String, String>> response = new ResponseModel<HashMap<String, String>>(data);
+		// TODO: ADD MORE CONTAINS FOR OTHER ERROR MESSAGES
 
 		// Bad request - request body is invalid
 		if (e.getMessage().toLowerCase().contains("bad request")) {
@@ -315,6 +370,15 @@ public class ResidentController {
 			response.setStatus(400);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.FORBIDDEN);
 		}
+		// Automatically does this for request param
+		// Bad request - request parameter is invalid
+		// if (e.getMessage().toLowerCase().contains("failed to convert value of type"))
+		// {
+		// response.setMessage(e.getLocalizedMessage());
+		// response.setStatus(400);
+		// return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response,
+		// HttpStatus.BAD_REQUEST);
+		// }
 		// Forbidden
 		else if (e.getMessage().toLowerCase().contains("invalid credentials")) {
 			// response.setMessage(e.getLocalizedMessage());
@@ -328,6 +392,26 @@ public class ResidentController {
 			response.setStatus(404);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
+		// Does not exist
+		else if (e.getMessage().toLowerCase().contains("does not exist")) {
+			response.setMessage("Does not exist");
+			response.setStatus(404);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
+		}
+		// Problem retrieving
+		else if (e.getMessage().toLowerCase().contains("problem getting")) {
+			response.setMessage("Problem retrieving. May not exist.");
+			response.setStatus(404); // TODO - should be a diffenent stat
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
+		}
+		// Problem updating
+		else if (e.getMessage().toLowerCase().contains("couldn't update")) { // thrown in data service for updating
+																				// resident
+			response.setMessage("Problem updating.");
+			response.setStatus(500); // TODO - should be a diffenent stat
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response,
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 		// Internal Server Error
 		else {
 			response.setMessage(
@@ -337,5 +421,3 @@ public class ResidentController {
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
-}
