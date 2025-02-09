@@ -3,8 +3,6 @@
 // Tests generated with the help of ChatGPT 4o mini
 package com.knockk.api.data.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Date;
 import java.util.UUID;
 import javax.security.auth.login.CredentialException;
 import javax.sql.DataSource;
@@ -30,7 +29,10 @@ import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
 import com.knockk.api.entity.BuildingEntity;
+import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
+import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.data.Gender;
 
 public class ResidentDataServiceTests {
 
@@ -80,8 +82,24 @@ public class ResidentDataServiceTests {
     // private BuildingEntity mockBuilding;
     private UUID buildingId;
 
+    // Mock unit information
+    private UUID leaseId;
+    private UUID unitId;
+
     // Create a mock BuildingEntity
     BuildingEntity mockBuilding = mock(BuildingEntity.class);
+
+    // Create mock UUIDs for the invitor and invitee
+    private UUID invitorId;
+    private UUID inviteeId;
+    private FriendshipEntity mockFriendship;
+
+    // Create mock UUIDs for the resident and friend
+    private UUID residentId;
+    private UUID friendId;
+
+    // Mock unit
+    private UnitEntity mockUnit;
 
     @BeforeEach
     public void setUp() {
@@ -97,7 +115,21 @@ public class ResidentDataServiceTests {
 
         buildingId = UUID.randomUUID();
 
-        mockResident = new ResidentEntity();
+        mockResident = new ResidentEntity(UUID.randomUUID(), "Grace", "Radlund", Gender.Female, 21, "Sun Prairie", "",
+                "", "", "ginsta", "gsnap", "gx", "gface", leaseId, true);
+
+        invitorId = UUID.randomUUID();
+        inviteeId = UUID.randomUUID();
+
+        mockFriendship = new FriendshipEntity(UUID.randomUUID(), new Date(), invitorId, inviteeId, false);
+
+        residentId = UUID.randomUUID();
+        friendId = UUID.randomUUID();
+
+        leaseId = UUID.randomUUID();
+        unitId = UUID.randomUUID();
+
+        mockUnit = new UnitEntity(UUID.randomUUID(), 3, 209, 4, buildingId);
 
         // mockBuilding = new BuildingEntity(buildingId, "Encanto", 500, 1, 6,
         // noRoomsRight, noRoomsLeft, UUID.randomUUID());
@@ -297,6 +329,390 @@ public class ResidentDataServiceTests {
         verify(buildingRepository, times(1)).findById(buildingId);
     }
 
+    /**
+     * Test to verify if a resident's credentials are correct and whether they are
+     * verified.
+     * The method checks if the resident exists in the database and throws an
+     * exception if not.
+     * Then, it returns whether the resident is verified.
+     * In this test, we mock the database response to test both success and failure
+     * cases.
+     */
+    // @Test
+    // public void testCheckVerified_ValidResident_ReturnsVerifiedStatus() throws
+    // CredentialException {
+    // mockResident.setVerified(true); // Set the verified flag to true
+    // List<ResidentEntity> mockResidentList =
+    // Collections.singletonList(mockResident);
+
+    // // Mock the database response for the query
+    // when(jdbcTemplateObject.query(anyString(), any(ResidentMapper.class)))
+    // .thenReturn(mockResidentList);
+
+    // // Act: Call the method under test
+    // boolean isVerified = residentDataService.checkVerified(validId);
+
+    // // Assert: Verify that the method returns the expected verified status
+    // assertTrue(isVerified);
+
+    // // Verify that the query method was called with the correct SQL
+    // verify(jdbcTemplateObject, times(1)).query(anyString(),
+    // any(ResidentMapper.class));
+    // }
+
+    /**
+     * Test to verify that the method throws a CredentialException when no resident
+     * is found.
+     * This tests the case where the database query returns no results, and an
+     * exception should
+     * be thrown to indicate invalid credentials.
+     */
+    // @Test
+    // public void testCheckVerified_InvalidResident_ThrowsCredentialException()
+    // throws CredentialException {
+    // // Arrange: Create a resident ID that doesn't exist in the database
+    // UUID residentId = UUID.randomUUID();
+
+    // // Mock the database response to return an empty list (no resident found)
+    // when(jdbcTemplateObject.query(anyString(), any(ResidentMapper.class)))
+    // .thenReturn(Collections.emptyList());
+
+    // // Act: Call the method under test, which should throw a CredentialException
+    // residentDataService.checkVerified(residentId);
+    // }
+
+    /**
+     * Test to verify that a new friendship is created successfully when no
+     * friendship exists.
+     * We mock the repository behavior to simulate adding a friendship, and the
+     * method should
+     * return the created friendship entity.
+     */
+    @Test
+    public void testCreateFriendship_Success() throws Exception {
+        // Mock the repository's findByResidentIdAndNeighborId method to return an empty
+        // Optional
+        when(friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId))
+                .thenReturn(Optional.empty()) // First call, no friendship exists
+                .thenReturn(Optional.of(mockFriendship)); // Second call, friendship exists after creation
+
+        // Mock the repository's addFriendship method to return a successful result
+        // (non-zero rows)
+        when(friendshipRepository.addFriendship(invitorId, inviteeId, false))
+                .thenReturn(UUID.randomUUID());
+
+        // Chat is stupid and wrong! It had me do this, but it was causing an issue
+        // because it rewrote the calls
+        // Mock the findByResidentIdAndNeighborId method again to return a friendship
+        // entity after creation
+        // when(friendshipRepository.findByResidentIdAndNeighborId(invitorId,
+        // inviteeId))
+        // .thenReturn(Optional.of(mockFriendship));
+
+        // Act: Call the method under test
+        FriendshipEntity createdFriendship = residentDataService.createFriendship(invitorId, inviteeId);
+
+        // Assert: Verify that the friendship was created successfully
+        assertNotNull(createdFriendship);
+        assertEquals(invitorId, createdFriendship.getInvitorId());
+        assertEquals(inviteeId, createdFriendship.getInviteeId());
+        assertFalse(createdFriendship.isAccepted());
+
+        // Verify that the repository methods were called with the correct arguments
+        verify(friendshipRepository, times(2)).findByResidentIdAndNeighborId(invitorId, inviteeId);
+        verify(friendshipRepository).addFriendship(invitorId, inviteeId, false);
+    }
+
+    /**
+     * Test to verify that an exception is thrown when the friendship already
+     * exists.
+     * We mock the repository's findByResidentIdAndNeighborId method to simulate an
+     * existing friendship.
+     */
+    @Test
+    public void testCreateFriendship_AlreadyExists_ThrowsException() throws Exception {
+
+        // Mock the repository's findByResidentIdAndNeighborId method to return an
+        // existing friendship
+        when(friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId))
+                .thenReturn(Optional.of(mockFriendship));
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.createFriendship(invitorId, inviteeId);
+        });
+
+        // Verify that the repository method was called exactly once with the correct
+        // parameters.
+        verify(friendshipRepository, times(1)).findByResidentIdAndNeighborId(invitorId, inviteeId);
+    }
+
+    /**
+     * Test to verify that checkConnected returns false when no friendship exists.
+     */
+    @Test
+    public void testCheckConnected_NoFriendship_ReturnsFalse() {
+        // Mock the repository's findByResidentIdAndNeighborId method to return an empty
+        // Optional
+        when(friendshipRepository.findByResidentIdAndNeighborId(residentId, friendId))
+                .thenReturn(Optional.empty());
+
+        // Act: Call the method under test
+        boolean isConnected = residentDataService.checkConnected(residentId, friendId);
+
+        // Assert: Verify that the method returns false when no friendship exists
+        assertFalse(isConnected);
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).findByResidentIdAndNeighborId(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that checkConnected returns true when a friendship exists and
+     * is accepted.
+     */
+    @Test
+    public void testCheckConnected_FriendshipAccepted_ReturnsTrue() {
+        mockFriendship.setAccepted(true);
+
+        // Mock the repository's findByResidentIdAndNeighborId method to return the
+        // accepted friendship
+        when(friendshipRepository.findByResidentIdAndNeighborId(residentId, friendId))
+                .thenReturn(Optional.of(mockFriendship));
+
+        // Act: Call the method under test
+        boolean isConnected = residentDataService.checkConnected(residentId, friendId);
+
+        // Assert: Verify that the method returns true when the friendship is accepted
+        assertTrue(isConnected);
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).findByResidentIdAndNeighborId(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that checkConnected returns false when a friendship exists but
+     * is not accepted.
+     */
+    @Test
+    public void testCheckConnected_FriendshipNotAccepted_ReturnsFalse() {
+        // Mock the repository's findByResidentIdAndNeighborId method to return the
+        // non-accepted friendship
+        when(friendshipRepository.findByResidentIdAndNeighborId(residentId, friendId))
+                .thenReturn(Optional.of(mockFriendship));
+
+        // Act: Call the method under test
+        boolean isConnected = residentDataService.checkConnected(residentId, friendId);
+
+        // Assert: Verify that the method returns false when the friendship is not
+        // accepted
+        assertFalse(isConnected);
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).findByResidentIdAndNeighborId(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that deleteFriendship returns true when the friendship is
+     * deleted successfully.
+     */
+    @Test
+    public void testDeleteFriendship_Success() throws Exception {
+        // Mock the repository's deleteFriendship method to return 1 (indicating
+        // successful deletion)
+        when(friendshipRepository.deleteFriendship(residentId, friendId))
+                .thenReturn(1); // Successful deletion (1 row deleted)
+
+        // Act: Call the method under test
+        boolean result = residentDataService.deleteFriendship(residentId, friendId);
+
+        // Assert: Verify that the method returns true when the deletion is successful
+        assertTrue(result);
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).deleteFriendship(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that deleteFriendship throws an exception when the deletion
+     * fails.
+     */
+    @Test
+    public void testDeleteFriendship_Failure_ThrowsException() throws Exception {
+        // Mock the repository's deleteFriendship method to return 0 (indicating failure
+        // to delete)
+        when(friendshipRepository.deleteFriendship(residentId, friendId))
+                .thenReturn(0); // Failed deletion (0 rows deleted)
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.deleteFriendship(residentId, friendId);
+        });
+
+        // Verify that the repository method was called exactly once with the correct
+        // parameters.
+        verify(friendshipRepository, times(1)).deleteFriendship(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that findFriendship returns a FriendshipEntity when the
+     * friendship exists.
+     */
+    @Test
+    public void testFindFriendship_FriendshipExists_ReturnsFriendship() {
+        // Mock the repository's findByResidentIdAndNeighborId method to return the
+        // existing friendship
+        when(friendshipRepository.findByResidentIdAndNeighborId(residentId, friendId))
+                .thenReturn(Optional.of(mockFriendship));
+
+        // Act: Call the method under test
+        Optional<FriendshipEntity> result = residentDataService.findFriendship(residentId, friendId);
+
+        // Assert: Verify that the returned Optional contains the mockFriendship
+        assertTrue(result.isPresent());
+        assertEquals(mockFriendship, result.get());
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).findByResidentIdAndNeighborId(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that findFriendship returns an empty Optional when the
+     * friendship does not exist.
+     */
+    @Test
+    public void testFindFriendship_FriendshipDoesNotExist_ReturnsEmptyOptional() {
+        // Mock the repository's findByResidentIdAndNeighborId method to return an empty
+        // Optional (no friendship)
+        when(friendshipRepository.findByResidentIdAndNeighborId(residentId, friendId))
+                .thenReturn(Optional.empty());
+
+        // Act: Call the method under test
+        Optional<FriendshipEntity> result = residentDataService.findFriendship(residentId, friendId);
+
+        // Assert: Verify that the returned Optional is empty
+        assertFalse(result.isPresent());
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(friendshipRepository).findByResidentIdAndNeighborId(residentId, friendId);
+    }
+
+    /**
+     * Test to verify that findNeighborsByUnit returns a list of UUIDs when
+     * neighbors exist.
+     */
+    @Test
+    public void testFindNeighborsByUnit_NeighborsExist_ReturnsList() {
+        // Arrange: Define the floor and room
+        int floor = 2;
+        int room = 305;
+
+        // Create a list of mock UUIDs representing the neighbors (residents)
+        UUID resident1 = UUID.randomUUID();
+        UUID resident2 = UUID.randomUUID();
+        List<UUID> mockNeighbors = Arrays.asList(resident1, resident2);
+
+        // Mock the repository's findResidentsByUnit method to return the mock list of
+        // neighbors
+        when(residentRepository.findResidentsByUnit(floor, room)).thenReturn(mockNeighbors);
+
+        // Act: Call the method under test
+        List<UUID> result = residentDataService.findNeighborsByUnit(floor, room);
+
+        // Assert: Verify that the returned list matches the expected neighbors list
+        assertNotNull(result); // Ensure the result is not null
+        assertEquals(2, result.size()); // Verify the size of the list
+        assertTrue(result.contains(resident1)); // Verify resident1 is in the list
+        assertTrue(result.contains(resident2)); // Verify resident2 is in the list
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(residentRepository).findResidentsByUnit(floor, room);
+    }
+
+    /**
+     * Test to verify that findNeighborsByUnit returns an empty list when no
+     * neighbors are found.
+     */
+    @Test
+    public void testFindNeighborsByUnit_NoNeighborsFound_ReturnsEmptyList() {
+        // Arrange: Define the floor and room
+        int floor = 3;
+        int room = 101;
+
+        // Mock the repository's findResidentsByUnit method to return an empty list (no
+        // neighbors)
+        when(residentRepository.findResidentsByUnit(floor, room)).thenReturn(Arrays.asList());
+
+        // Act: Call the method under test
+        List<UUID> result = residentDataService.findNeighborsByUnit(floor, room);
+
+        // Assert: Verify that the returned list is empty
+        assertNotNull(result); // Ensure the result is not null
+        assertTrue(result.isEmpty()); // Verify the list is empty
+
+        // Verify that the repository method was called once with the correct arguments
+        verify(residentRepository).findResidentsByUnit(floor, room);
+    }
+
+    /**
+     * Test to verify that findUnitByUserId returns the unit ID when both lease and
+     * unit are found.
+     */
+    @Test
+    public void testFindUnitByUserId_ValidResident_ReturnsUnitId() throws Exception {
+        // Mock the repository methods to return the appropriate values
+        when(residentRepository.findLeaseIdByResidentId(residentId)).thenReturn(Optional.of(leaseId));
+        when(leaseRepository.findUnitByLeaseId(leaseId)).thenReturn(Optional.of(unitId));
+
+        // Act: Call the method under test
+        UUID result = residentDataService.findUnitByUserId(residentId);
+
+        // Assert: Verify that the unitId is returned as expected
+        assertEquals(unitId, result);
+
+        // Verify that both repository methods were called with the correct arguments
+        verify(residentRepository).findLeaseIdByResidentId(residentId);
+        verify(leaseRepository).findUnitByLeaseId(leaseId);
+    }
+
+    /**
+     * Test to verify that findUnitByUserId throws an exception when no lease ID is
+     * found.
+     */
+    @Test
+    public void testFindUnitByUserId_NoLeaseFound_ThrowsException() throws Exception {
+        // Mock the repository methods to return empty for leaseId
+        when(residentRepository.findLeaseIdByResidentId(residentId)).thenReturn(Optional.empty());
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.findUnitByUserId(residentId);
+        });
+
+        // Verify that the repository methods were called with the correct arguments
+        verify(residentRepository).findLeaseIdByResidentId(residentId);
+    }
+
+    /**
+     * Test to verify that findUnitByUserId throws an exception when no unit ID is
+     * found for the lease.
+     */
+    @Test
+    public void testFindUnitByUserId_NoUnitFound_ThrowsException() throws Exception {
+        // Mock the repository methods to return the leaseId but no unitId
+        when(residentRepository.findLeaseIdByResidentId(residentId)).thenReturn(Optional.of(leaseId));
+        when(leaseRepository.findUnitByLeaseId(leaseId)).thenReturn(Optional.empty());
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.findUnitByUserId(residentId);
+        });
+
+        // Verify that the repository methods were called with the correct arguments
+        verify(residentRepository).findLeaseIdByResidentId(residentId);
+        verify(leaseRepository).findUnitByLeaseId(leaseId);
+    }
+
     // Test case for successful login with valid email and password.
     @Test
     public void testFindResidentByEmailAndPassword_Success() throws CredentialException {
@@ -371,4 +787,90 @@ public class ResidentDataServiceTests {
         // password.
         verify(userRepository, times(1)).findByEmailAndPassword(validEmail, emptyPassword);
     }
+
+    /**
+     * Test to verify that findUnitById returns the correct UnitEntity when the unit
+     * exists.
+     */
+    @Test
+    public void testFindUnitById_UnitExists_ReturnsUnitEntity() {
+
+        // Mock the repository method to return the mockUnitEntity
+        when(unitRepository.findById(unitId)).thenReturn(Optional.of(mockUnit));
+
+        // Act: Call the method under test
+        UnitEntity result = residentDataService.findUnitById(unitId);
+
+        // Assert: Verify that the result is the same as the mockUnitEntity
+        assertNotNull(result); // Ensure the result is not null
+
+        // Verify that the findById method was called with the correct unitId
+        verify(unitRepository).findById(unitId);
+    }
+
+    /**
+     * Test to verify that findUnitById throws NoSuchElementException when the unit
+     * does not exist.
+     */
+    @Test
+    public void testFindUnitById_UnitNotFound_ThrowsNoSuchElementException() {
+        // Mock the repository method to return an empty Optional (simulating that the
+        // unit does not exist)
+        when(unitRepository.findById(unitId)).thenReturn(Optional.empty());
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.findUnitById(unitId);
+        });
+
+        // Verify that the findById method was called with the correct unitId
+        verify(unitRepository).findById(unitId);
+    }
+
+    /**
+     * Test to verify that updateFriendship updates the friendship when it exists.
+     */
+    @Test
+    public void testUpdateFriendship_FriendshipExists_UpdatesFriendship() throws Exception {
+        // Mock the repository to return the mock friendship when queried by the
+        // invitorId and inviteeId
+        when(friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId))
+                .thenReturn(Optional.of(mockFriendship));
+
+        // Mock the repository's save method to return the updated friendship
+        when(friendshipRepository.save(mockFriendship)).thenReturn(mockFriendship);
+
+        // Act: Call the method under test with isAccepted set to true
+        FriendshipEntity updatedFriendship = residentDataService.updateFriendship(invitorId, inviteeId, true);
+
+        // Assert: Verify that the friendship is updated and returned correctly
+        assertNotNull(updatedFriendship); // Ensure the updatedFriendship is not null
+        assertTrue(updatedFriendship.isAccepted()); // Verify that the accepted field is updated to true
+
+        // Verify that the findByResidentIdAndNeighborId and save methods were called
+        // with the correct parameters
+        verify(friendshipRepository).findByResidentIdAndNeighborId(invitorId, inviteeId);
+        verify(friendshipRepository).save(mockFriendship);
+    }
+
+    /**
+     * Test to verify that updateFriendship throws an exception when the friendship
+     * does not exist.
+     */
+    @Test
+    public void testUpdateFriendship_FriendshipNotFound_ThrowsException() throws Exception {
+        // Mock the repository to return an empty Optional (indicating no existing
+        // friendship)
+        when(friendshipRepository.findByResidentIdAndNeighborId(invitorId, inviteeId)).thenReturn(Optional.empty());
+
+        // Assert that the service method throws a Exception
+        assertThrows(Exception.class, () -> {
+            residentDataService.updateFriendship(invitorId, inviteeId, true);
+        });
+
+        // Verify that the findByResidentIdAndNeighborId method was called with the
+        // correct parameters
+        verify(friendshipRepository).findByResidentIdAndNeighborId(invitorId, inviteeId);
+    }
+
 }
