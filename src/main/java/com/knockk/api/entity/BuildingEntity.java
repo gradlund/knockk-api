@@ -20,6 +20,9 @@ public class BuildingEntity {
     @Column("name")
     private String name;
 
+    @Column("address")
+    private String address;
+
     @Column("number_of_rooms")
     private int numberOfRoom;
 
@@ -38,16 +41,21 @@ public class BuildingEntity {
     @Column("fk_admin_id")
     private UUID adminId;
 
-    public BuildingEntity(UUID buildingId, String name, int numberOfRoom, int topFloor, int bottomFloor,
+    public BuildingEntity(UUID buildingId, String name, String address, int numberOfRoom, int topFloor, int bottomFloor,
             ArrayList<Integer> noRoomsRight, ArrayList<Integer> noRoomsLeft, UUID adminId) {
         this.buildingId = buildingId;
         this.name = name;
+        this.address = address;
         this.numberOfRoom = numberOfRoom;
         this.topFloor = topFloor;
         this.bottomFloor = bottomFloor;
         this.noRoomsRight = noRoomsRight;
         this.noRoomsLeft = noRoomsLeft;
         this.adminId = adminId;
+    }
+
+    public String getName(){
+        return name;
     }
 
     public int getTopFloor() {

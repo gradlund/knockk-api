@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.knockk.api.data.Gender;
+
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -50,6 +52,18 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
 	List<UUID> findResidentsByUnit(int floor, int room);
 
+	//@Transactional
+	@Modifying
+	@Query(value = "INSERT INTO \"Resident\" (resident_id, first_name, last_name, age, hometown, biography, profile_photo, background_photo, " + 
+	"instagram, snapchat, x, facebook, gender, fk_lease_id, verified) VALUES " +
+	 "(:id, :firstName, :lastName, :age, :hometown, :biography, " +
+			"CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
+			"CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
+			":instagram, :snapchat, :x, :facebook, CAST(:gender AS \"Gender\"), :leaseId, :verified)")
+	//int register(ResidentEntity resident);
+	int register(UUID id, String firstName, String lastName, int age, String hometown, String biography, String profilePhoto, String backgroundPhoto,
+	String instagram, String snapchat, String x, String facebook, Gender gender, UUID leaseId, boolean verified);
+
 	/**
 	 * Updates a resident's optional fields.
 	 * 
@@ -73,7 +87,7 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	@Query(value = "UPDATE \"Resident\" SET age = :age, hometown = :hometown, biography = :biography, " +
 			"profile_photo = CAST('\"' || :profilePhoto || '\"' AS JSONB), " +
 			"background_photo = CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
-			"instagram = :instagram, snapchat = :snapchat, x = :x, facebook = facebook " +
+			"instagram = :instagram, snapchat = :snapchat, x = :x, facebook = :facebook " +
 			" WHERE \"Resident\".resident_id = :id")
 	int update(int age, String hometown, String biography, String profilePhoto, String backgroundPhoto,
 			String instagram, String snapchat, String x, String facebook, UUID id);

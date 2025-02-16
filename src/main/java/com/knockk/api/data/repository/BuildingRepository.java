@@ -1,7 +1,9 @@
 package com.knockk.api.data.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import com.knockk.api.entity.BuildingEntity;
@@ -11,6 +13,12 @@ import com.knockk.api.entity.BuildingEntity;
  * 
  * @author graceradlund
  */
-public interface BuildingRepository  extends CrudRepository<BuildingEntity, UUID> {
-    
+public interface BuildingRepository extends CrudRepository<BuildingEntity, UUID> {
+
+    // @Query(value = "SELECT name from \"Building\" WHERE address = :address")
+    @Query(value = "SELECT * from \"Building\" WHERE address = :address")
+    public Optional<BuildingEntity> findByAddress(String address); // TODO: could return a list of buildingentity
+
+    @Query(value = "SELECT building_id from \"Building\" WHERE address = :address AND name = :name")
+    public Optional<UUID> findByAddressAndName(String address, String name);
 }

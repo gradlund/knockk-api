@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Date;
 
 import javax.security.auth.login.CredentialException;
 import javax.sql.DataSource;
@@ -22,6 +23,7 @@ import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.entity.UserEntity;
 import com.knockk.api.data.mapper.ResidentMapper;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
@@ -64,6 +66,17 @@ public class ResidentDataService {
 		this.userRepository = userRepository;
 		this.residentRepository = residentRepository;
 		this.jdbcTemplateObject = new JdbcTemplate(dataSource);
+	}
+
+	public UUID createAccount(UserEntity user) throws Exception{
+		// Check if email exists, if it does, throw error
+		Optional<UUID> userId = userRepository.findByEmail(user.getEmail());
+		if(userId.isPresent()){
+			throw new Exception("User already exists with that email.");
+		}
+		// Else insert the user and return the id
+		return userRepository.saveAccount(user.getEmail(), user.getPassword()); //TODO; combine calls
+
 	}
 
 	/**
@@ -209,6 +222,7 @@ public class ResidentDataService {
 	 *         doesn't exist
 	 */
 	public boolean checkConnected(UUID residentId, UUID friendId) {
+		// TO-DO : there will be an error if there are two friendships with the same id's, be careful when manually doing this
 		// Retrieve a frindship given the resident and friend is
 		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(residentId,
 				friendId);
@@ -219,6 +233,14 @@ public class ResidentDataService {
 		}
 		// Return accepted
 		return friendship.get().isAccepted();
+	}
+
+	public boolean createResident(ResidentEntity resident){
+		System.out.println(resident.getGender());
+		int rows = residentRepository.register(resident.getId(), resident.getFirstName(), resident.getLastName(), resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getGender(), resident.getLeaseId(), resident.isVerified());
+		//System.out.println(created);
+		System.out.println(rows);
+		return true;
 	}
 
 	/**
@@ -243,6 +265,17 @@ public class ResidentDataService {
 			throw new Exception("Problem deleting friendship.");
 		}
 	}
+
+	public BuildingEntity findBuilding(String street) throws Exception {
+        Optional<BuildingEntity> building = buildingRepository.findByAddress(street);
+
+		if(building.isPresent()){
+			return building.get();
+		}
+		else{ 
+			throw new Exception("Invalid address (case sensitive)."); // Or building hasn't been added by admin yet
+		}
+    }
 
 	/**
 	 * Retrieves the friendship of two residents
@@ -344,6 +377,58 @@ public class ResidentDataService {
 		// Return the unit
 		return unit.get();
 	}
+
+	public UUID getBuildingIdByAddressAndName(String address, String name) throws Exception{
+
+		// Find the building id
+		Optional<UUID> buildingId = buildingRepository.findByAddressAndName(address, name);
+
+		// If the buidlingn exsits by address and name, return the id
+		if(buildingId.isPresent()){
+			return buildingId.get();
+		}
+		// Else throw exception
+		throw new Exception("Building does not exist with given street and address.");
+	}
+
+	public UUID getLeaseId(String address, String buildingName, int floor, int room, String startDate, String endDate) throws Exception{
+
+		System.out.println(address + buildingName + floor + room + startDate + endDate);
+		// Find the lease id
+		Optional<UUID> leaseId = leaseRepository.findLeaseId(address, buildingName, floor, room, startDate, endDate);
+
+		// If the buidlingn exsits by address and name, return the id
+		if(leaseId.isPresent()){
+			System.out.println(leaseId.get());
+			return leaseId.get();
+		}
+		// Else throw exception
+		throw new Exception("Lease not found.");
+	}
+
+	// public UUID getUnitId(UUID buildingId, int floor, int room) throws Exception{
+	// 	// Find unit id
+	// 	Optional<UUID> unitId = unitRepository.findUnitId(buildingId, floor, room);
+
+	// 	// If the unit exists with that criteria, return the id
+	// 	if(unitId.isPresent()){
+	// 		return unitId.get();
+	// 	}
+	// 	// Else throw exception
+	// 	throw new Exception("Unit does not exist.");
+	// }
+
+	// private UUID getLeaseId(UUID unitId, Date startDate, Date endDate) throws Exception{
+	// 	// Find lease id
+	// 	Optional<UUID> leaseId = unitRepository.findUnitId(buildingId, floor, room);
+
+	// 	// If the unit exists with that criteria, return the id
+	// 	if(unitId.isPresent()){
+	// 		return unitId.get();
+	// 	}
+	// 	// Else throw exception
+	// 	throw new Exception("Lease does not exist.");
+	// }
 
 	// TODO: do I need to retrieve the whole residententity?
 	/**

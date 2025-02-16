@@ -20,4 +20,7 @@ public interface UnitRepository extends CrudRepository<UnitEntity, UUID> {
 
     // @Query(value = "SELECT unit_id FROM \"Unit\" where floor = :floor  AND room = :room")
     // public Optional<UUID> findUnitIdByFloorAndRoom(int floor, int room);
+
+     @Query(value = "SELECT unit_id FROM \"Unit\" where fk_building_id = : buildingId AND floor = :floor  AND room = :room")
+    public Optional<UUID> findUnitId(UUID buildingId, int floor, int room);
 }

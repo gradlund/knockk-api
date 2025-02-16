@@ -1,9 +1,14 @@
 package com.knockk.api.controller;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.Map;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,15 +16,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knockk.api.business.ResidentBusinessService;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
 import com.knockk.api.model.OptionalResidentModel;
+import com.knockk.api.model.RegisterModel;
 import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.ResponseModel;
 import com.knockk.api.model.UnitResidentModel;
@@ -53,7 +61,7 @@ public class ResidentController {
 	 * @return a ResponseEntity with a status code, message, and data
 	 */
 	@PostMapping("/friendship")
-	public ResponseEntity<?> createFriendship(@RequestBody FriendshipModel friendshipRequest, Errors errors) {
+	public ResponseEntity<?> updateFriendship(@RequestBody FriendshipModel friendshipRequest, Errors errors) {
 		try {
 			// If the request does not contain the valid model, throw an exception
 			if (errors.hasErrors())
@@ -62,8 +70,8 @@ public class ResidentController {
 			// Update friendship (create one) using the invitor's id, invitee's id, and if
 			// accepted (which should be false if creating one)
 			// isAccepted field is not used from the request
-			FriendshipModel friendship = service.createFriendship(friendshipRequest.getInvitorId(),
-					friendshipRequest.getInviteeId());
+			FriendshipModel friendship = service.updateFriendship(friendshipRequest.getInvitorId(),
+					friendshipRequest.getInviteeId(), friendshipRequest.isAccepted());
 
 			// ResponseModel with the friendship model, message, and status code
 			ResponseModel<FriendshipModel> response = new ResponseModel<FriendshipModel>(friendship,
@@ -71,6 +79,53 @@ public class ResidentController {
 			// Return response
 			return new ResponseEntity<ResponseModel<FriendshipModel>>(response, HttpStatus.OK);
 
+		}
+		// Handle errors
+		catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	@PostMapping("/create-account")
+	@ResponseBody
+	public ResponseEntity<?> createAccount(@Valid @RequestBody UserModel credentials, Errors errors) {
+		try {
+			// If the request does not contain the valid model, throw an exception
+			if (errors.hasErrors())
+				throw new IllegalArgumentException("Bad request");
+
+			// Otherwise, register the account. If the email already exists, it will throw
+			// an error
+			UUID userId = service.createAccount(credentials);
+
+			// Return a response
+			ResponseModel<UUID> response = new ResponseModel<UUID>(userId, "Account Creation Successful", 204);
+			return new ResponseEntity<ResponseModel<UUID>>(response, HttpStatus.OK); // using NO_CONTENT will not
+																						// return a response body
+		}
+		// Handle errors
+		catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	@GetMapping("/lease")
+	@ResponseBody
+	public ResponseEntity<?> getLease(@RequestParam(name = "address") String address,
+			@RequestParam(name = "buildingName") String name, @RequestParam(name = "floor") int floor,
+			@RequestParam(name = "room") int room, @RequestParam(name = "startDate") String startDate,
+			@RequestParam(name = "endDate") String endDate) {
+		try {
+			UUID leaseId = service.getLease(address, name, floor, room, startDate, endDate);
+
+			// Return a response
+			ResponseModel<UUID> response = new ResponseModel<UUID>(leaseId, "Account Creation Successful", 204);
+			return new ResponseEntity<ResponseModel<UUID>>(response, HttpStatus.OK); // using NO_CONTENT will not
+																						// return a response body
 		}
 		// Handle errors
 		catch (Exception e) {
@@ -156,6 +211,25 @@ public class ResidentController {
 		}
 		// Handle errors
 		catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
+	@GetMapping("/building/{street}")
+	public ResponseEntity<?> getBuilding(@PathVariable("street") String street) {
+		try {
+
+			String building = service.getBuilding(street);
+
+			// ResponseModel with a list of neighboring residents of the unit, message, and
+			// status code
+			ResponseModel<String> response = new ResponseModel<String>(building,
+					"Success", 200);
+			// Return response
+			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.OK);
+		} catch (Exception e) {
 			e.printStackTrace();
 
 			return handleErrorResponse(e);
@@ -351,6 +425,35 @@ public class ResidentController {
 		}
 	}
 
+	@PostMapping("/")
+	@ResponseBody // Could use ResidentModel
+	public ResponseEntity<?> register(@Valid @RequestBody RegisterModel registerInfo, Errors errors) {
+		try {
+			// If the request does not contain the valid model, throw an exception
+			if (errors.hasErrors()) {
+				System.out.println(errors);
+				throw new IllegalArgumentException("Bad request");
+			}
+
+			System.out.println(registerInfo.getLeaseId());
+			Boolean registered = service.register(registerInfo);
+			// Boolean registered = true;
+
+			// ResponseModel with boolean, message, and status code
+			ResponseModel<Boolean> response = new ResponseModel<Boolean>(registered,
+					"Success", 201);
+			// Return response
+			return new ResponseEntity<ResponseModel<Boolean>>(response, HttpStatus.OK);
+
+		}
+		// Handle errors
+		catch (Exception e) {
+			e.printStackTrace();
+
+			return handleErrorResponse(e);
+		}
+	}
+
 	/**
 	 * Method to handle the responses of errors
 	 * 
@@ -392,6 +495,12 @@ public class ResidentController {
 			response.setStatus(404);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
+		// Already exists
+		else if (e.getMessage().toLowerCase().contains("already exists")) {
+			response.setMessage("Already Exists");
+			response.setStatus(302);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.FOUND);
+		}
 		// Does not exist
 		else if (e.getMessage().toLowerCase().contains("does not exist")) {
 			response.setMessage("Does not exist");
@@ -421,3 +530,4 @@ public class ResidentController {
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+}

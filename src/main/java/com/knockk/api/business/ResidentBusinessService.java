@@ -5,22 +5,28 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Date;
 
 import javax.security.auth.login.CredentialException;
 
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.ResidentDataService;
+import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.entity.UserEntity;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
 import com.knockk.api.model.OptionalResidentModel;
+import com.knockk.api.model.RegisterModel;
 import com.knockk.api.model.ResidentModel;
 import com.knockk.api.model.UnitResidentModel;
 import com.knockk.api.model.UserModel;
+
+import com.knockk.api.data.Gender;
 
 /**
  * This class implements the business service for residents
@@ -40,24 +46,34 @@ public class ResidentBusinessService {
 		this.dataService = dataService;
 	}
 
-	/**
-	 * Creates a friendship. Used for creating or updating a friendship.
-	 * 
-	 * @param invitorId : id of the resident who sent the request
-	 * @param inviteeId : id of the resident who is receiving the friendship request
-	 * @return a friendship model that contains details about the friendship
-	 * @throws Exception
-	 */
-	public FriendshipModel createFriendship(UUID invitorId, UUID inviteeId) throws Exception {
-		// TODO: make sure they are valid neighbors
+	public String getBuilding(String street) throws Exception {
+        BuildingEntity building = dataService.findBuilding(street);
+		return building.getName();
+    }
 
-		// Use the data service class to create a friendship and store the response as a
-		// friendship entity
-		FriendshipEntity friendship = dataService.createFriendship(invitorId, inviteeId);
-
-		// Convert the entity to a model to return
-		return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+	public UUID createAccount(UserModel credentials) throws Exception{
+		// Check if the email exists throw an error, otherwise create the account
+		// Convert to entity
+		return dataService.createAccount(new UserEntity(null, credentials.getEmail(), credentials.getPassword()));
 	}
+
+	// /**
+	//  * Creates a friendship. Used for creating or updating a friendship.
+	//  * 
+	//  * @param invitorId : id of the resident who sent the request
+	//  * @param inviteeId : id of the resident who is receiving the friendship request
+	//  * @return a friendship model that contains details about the friendship
+	//  * @throws Exception
+	//  */
+	// public FriendshipModel createFriendship(UUID invitorId, UUID inviteeId) throws Exception {
+	// 	// TODO: make sure they are valid neighbors; make sure id's aren't the same (invitor == invitee) and make sure friendship doesn't already exist with those same uuids
+	// 	// Use the data service class to create a friendship and store the response as a
+	// 	// friendship entity
+	// 	FriendshipEntity friendship = dataService.createFriendship(invitorId, inviteeId);
+
+	// 	// Convert the entity to a model to return
+	// 	return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+	// }
 
 	/**
 	 * Deletes a friendship.
@@ -118,10 +134,18 @@ public class ResidentBusinessService {
 
 		// Use the data service class to update the friendship and store the response as
 		// a friendship entity
+		// If a friendship does not exist, create one
+		try{
 		FriendshipEntity friendship = dataService.updateFriendship(invitorId, inviteeId, isAccepted);
 
 		// Convert the entity to a model to return
 		return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+		}catch(Exception e){
+			FriendshipEntity friendship = dataService.createFriendship(invitorId, inviteeId);
+
+			// Convert the entity to a model to return
+			return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+		}
 	}
 
 	// TODO: Wrap in try catch - may not need because I have error checking in
@@ -337,5 +361,26 @@ public class ResidentBusinessService {
 		return false;
 	}
 
-	// TODO: get unit - show an error if no units are registered
+	//public boolean register(ResidentModel resident, UUID leaseId){
+		public boolean register(RegisterModel resident){
+			System.out.println(resident.getGender());
+		ResidentEntity residentEntity = new ResidentEntity(UUID.fromString(resident.getId()), resident.getFirstName(), resident.getLastName(), Gender.valueOf(resident.getGender()), resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(), UUID.fromString(resident.getLeaseId()), false);
+		//UUID id = dataService.getResidentId(resident.getEmail());
+		return dataService.createResident(residentEntity);
+	}
+
+	public UUID getLease(String address, String name, int floor, int room, String startDate, String endDate) throws Exception{
+		// Get building id from name of the Building table // name isn't unique, so I need address too
+		// With throw an error if it doesn't exist
+		//UUID buildingId = dataService.getBuildingIdByAddressAndName(address, name);
+
+		//Using that as a foregin key, get the unit id from the floor and room number
+		//UUID unitId = dataService.getUnitId(buildingId, floor, room);
+
+		// Using that as a foregin key in the Lease table, use the start date and end date to get the lease id
+		return dataService.getLeaseId(address, name, floor, room, startDate, endDate);
+		
+	}
+
+	// TODO: get unit - show an error if no units are registere
 }
