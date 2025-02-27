@@ -54,6 +54,10 @@ public class BuildingEntity {
         this.adminId = adminId;
     }
 
+    public UUID getId(){
+        return buildingId;
+    }
+
     public String getName(){
         return name;
     }

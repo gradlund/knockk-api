@@ -1,5 +1,6 @@
 package com.knockk.api.data.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,4 +22,7 @@ public interface BuildingRepository extends CrudRepository<BuildingEntity, UUID>
 
     @Query(value = "SELECT building_id from \"Building\" WHERE address = :address AND name = :name")
     public Optional<UUID> findByAddressAndName(String address, String name);
+
+    @Query(value = "SELECT * from \"Building\" WHERE fk_admin_id = :adminId")
+    public List<BuildingEntity> findAllByAdminId(UUID adminId);
 }

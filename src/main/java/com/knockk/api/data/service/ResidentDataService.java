@@ -485,8 +485,9 @@ public class ResidentDataService {
 	 * 
 	 * @param id : id of the resident
 	 * @return a resident entity
-	 */
-	public ResidentEntity getResidentEntity(UUID id) {
+		 * @throws Exception 
+		 */
+		public ResidentEntity getResidentEntity(UUID id) {
 		// TODO: switch to using repository or using prepared statement
 		String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + id + "'";
 		List<ResidentEntity> resident = jdbcTemplateObject.query(sql, new ResidentMapper());
@@ -496,6 +497,7 @@ public class ResidentDataService {
 		if (resident.isEmpty()) {
 			throw new NoSuchElementException("Problem retrieving resident.");
 		}
+	
 		// Return the resident
 		return resident.get(0);
 	}

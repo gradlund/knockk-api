@@ -491,6 +491,7 @@ public class ResidentController {
 		}
 		// Not Found
 		else if (e.getMessage().toLowerCase().contains("not found")) {
+			System.out.println("Not found");
 			response.setMessage("Not Found");
 			response.setStatus(404);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);

@@ -36,6 +36,8 @@ public class ResidentEntity {
 	@Column("biography")
 	private String biography;
 	
+	//column definition?
+
 	@Column("profile_photo")
 	private String profilePhoto;
 	
@@ -60,6 +62,39 @@ public class ResidentEntity {
 	@Column("verified")
 	private boolean verified;
 
+	// @Column("age")
+	// private int age;
+	
+	// @Column("hometown")
+	// private String hometown;
+	
+	// @Column("biography")
+	// private String biography;
+	
+	// @Column("profile_photo")
+	// private String profilePhoto;
+	
+	// @Column("background_photo")
+	// private String backgroundPhoto;
+	
+	// @Column("instagram")
+	// private String instagram;
+	
+	// @Column("snapchat")
+	// private String snapchat;
+	
+	// @Column("x")
+	// private String x;
+	
+	// @Column("facebook")
+	// private String facebook;
+	
+	// @Column("fk_lease_id")
+	// private UUID leaseId;
+	
+	// @Column("verified")
+	// private boolean verified;
+
 	public ResidentEntity(UUID id, String firstName, String lastName, 
 			Gender gender, 
 			int age, String hometown,
@@ -82,8 +117,26 @@ public class ResidentEntity {
 		this.verified = verified;
 	}
 
-	public ResidentEntity() {
-		// TODO Auto-generated constructor stub
+
+	public ResidentEntity(String firstName, String lastName, 
+			Gender gender, 
+			int age, String hometown,
+			String biography, String profilePhoto, String backgroundPhoto, String instagram, String snapchat, String x,
+			String facebook, UUID leaseId, boolean verified) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.gender = gender;
+		this.age = age;
+		this.hometown = hometown;
+		this.biography = biography;
+		this.profilePhoto = profilePhoto;
+		this.backgroundPhoto = backgroundPhoto;
+		this.instagram = instagram;
+		this.snapchat = snapchat;
+		this.x = x;
+		this.facebook = facebook;
+		this.leaseId = leaseId;
+		this.verified = verified;
 	}
 
 	public UUID getId() {

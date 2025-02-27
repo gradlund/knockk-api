@@ -6,11 +6,14 @@ import java.util.UUID;
 
 import com.knockk.api.data.Gender;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.ResidentEntity;
 
 /**
@@ -39,30 +42,61 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	@Query(value = "SELECT fk_lease_id from \"Resident\" WHERE resident_id = :residentId")
 	Optional<UUID> findLeaseIdByResidentId(UUID residentId);
 
-	/**
-	 * Retrieves UUIDs of resident given the unit information
-	 * 
-	 * @param floor : the unit is on
-	 * @param room  : the unit is in
-	 * @return a list of ids of residents in that unit
-	 */
+
+	@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
+			+
+			"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+			"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+			"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified " +
+			"LIMIT :limit OFFSET :offset")
+	// ORDERBY
+	// countQuery = "SELECT count(*)" +
+	// " INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id"
+	// +
+	// " INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	// " INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	// " INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+	// " where \"Building\".building_id = :buildingId AND \"Resident\".verified =
+	// :verified")
+	List<AdminResidentEntity> findAllByBuildingIdAndVerification(UUID buildingId, boolean verified, int limit,
+			long offset);
+
+			@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
+			+
+			"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+			"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+			"  where \"Resident\".resident_id = :residentId")
+	Optional<AdminResidentEntity> findResidentById(UUID residentId);
+
 	@Query(value = "SELECT \"Resident\".resident_id from \"Unit\"" +
 			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
 			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
 			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
 	List<UUID> findResidentsByUnit(int floor, int room);
 
-	//@Transactional
+	// @Transactional
 	@Modifying
-	@Query(value = "INSERT INTO \"Resident\" (resident_id, first_name, last_name, age, hometown, biography, profile_photo, background_photo, " + 
-	"instagram, snapchat, x, facebook, gender, fk_lease_id, verified) VALUES " +
-	 "(:id, :firstName, :lastName, :age, :hometown, :biography, " +
+	@Query(value = "INSERT INTO \"Resident\" (resident_id, first_name, last_name, age, hometown, biography, profile_photo, background_photo, "
+			+
+			"instagram, snapchat, x, facebook, gender, fk_lease_id, verified) VALUES " +
+			"(:id, :firstName, :lastName, :age, :hometown, :biography, " +
 			"CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
 			"CAST('\"' || :backgroundPhoto || '\"' AS JSONB), " +
 			":instagram, :snapchat, :x, :facebook, CAST(:gender AS \"Gender\"), :leaseId, :verified)")
-	//int register(ResidentEntity resident);
-	int register(UUID id, String firstName, String lastName, int age, String hometown, String biography, String profilePhoto, String backgroundPhoto,
-	String instagram, String snapchat, String x, String facebook, Gender gender, UUID leaseId, boolean verified);
+	// int register(ResidentEntity resident);
+	int register(UUID id, String firstName, String lastName, int age, String hometown, String biography,
+			String profilePhoto, String backgroundPhoto,
+			String instagram, String snapchat, String x, String facebook, Gender gender, UUID leaseId,
+			boolean verified);
+
+			// modifying returns a value
+			@Modifying
+			@Query(value = "UPDATE \"Resident\" SET verified = true WHERE \"Resident\".resident_id = :residentId")
+			int activate(UUID residentId);
 
 	/**
 	 * Updates a resident's optional fields.
