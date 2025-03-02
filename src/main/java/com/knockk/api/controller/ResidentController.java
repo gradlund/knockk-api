@@ -221,14 +221,14 @@ public class ResidentController {
 	public ResponseEntity<?> getBuilding(@PathVariable("street") String street) {
 		try {
 
-			String building = service.getBuilding(street);
+			List<String> buildings = service.getBuildings(street);
 
 			// ResponseModel with a list of neighboring residents of the unit, message, and
 			// status code
-			ResponseModel<String> response = new ResponseModel<String>(building,
+			ResponseModel<List<String>> response = new ResponseModel<List<String>>(buildings,
 					"Success", 200);
 			// Return response
-			return new ResponseEntity<ResponseModel<String>>(response, HttpStatus.OK);
+			return new ResponseEntity<ResponseModel<List<String>>>(response, HttpStatus.OK);
 		} catch (Exception e) {
 			e.printStackTrace();
 

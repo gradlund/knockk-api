@@ -18,7 +18,7 @@ public interface BuildingRepository extends CrudRepository<BuildingEntity, UUID>
 
     // @Query(value = "SELECT name from \"Building\" WHERE address = :address")
     @Query(value = "SELECT * from \"Building\" WHERE address = :address")
-    public Optional<BuildingEntity> findByAddress(String address); // TODO: could return a list of buildingentity
+    public List<BuildingEntity> findByAddress(String address); // TODO: could return a list of buildingentity
 
     @Query(value = "SELECT building_id from \"Building\" WHERE address = :address AND name = :name")
     public Optional<UUID> findByAddressAndName(String address, String name);

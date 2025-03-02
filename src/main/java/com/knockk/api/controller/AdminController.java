@@ -132,6 +132,33 @@ public class AdminController {
 		}
 	}
 
+		// What would default request param be?
+		@GetMapping("/{buildingId}/")
+		public ResponseEntity<?> getPageInfo(@PathVariable("buildingId") String id, @RequestParam(defaultValue = "false") boolean areVerified) {
+			try {
+
+				//TODO: have my own custom try catch to throw error, otherwise server will
+
+				// Retrieve the building's id from the path variable
+			UUID buildingId = UUID.fromString(id);
+	
+				// Retrieve the number of pages of the building
+				int residents = service.getNumberOfResidents(buildingId, areVerified);
+	
+				// ResponseModel with a list of neighboring rooms, message, and status code
+				ResponseModel<Integer> response = new ResponseModel<Integer>(residents,
+						"Success", 200);
+				// Return response
+				return new ResponseEntity<ResponseModel<Integer>>(response, HttpStatus.OK);
+			}
+			// Handle errors
+			catch (Exception e) {
+				e.printStackTrace();
+	
+				return handleErrorResponse(e);
+			}
+		}
+
 	@GetMapping("/{residentId}")
 	public ResponseEntity<?> getResident(@PathVariable("residentId") String id) {
 		try {

@@ -46,9 +46,14 @@ public class ResidentBusinessService {
 		this.dataService = dataService;
 	}
 
-	public String getBuilding(String street) throws Exception {
-        BuildingEntity building = dataService.findBuilding(street);
-		return building.getName();
+	public List<String> getBuildings(String street) throws Exception {
+        List<BuildingEntity> buildingEntities = dataService.findBuilding(street);
+		List<String> buildings = new ArrayList<String>();
+		for (BuildingEntity building : buildingEntities) {
+			System.out.println(building.getName());
+			buildings.add(building.getName());
+		}
+		return buildings;
     }
 
 	public UUID createAccount(UserModel credentials) throws Exception{
@@ -350,11 +355,14 @@ public class ResidentBusinessService {
 		}
 
 		// Update the resident
-		ResidentEntity updated = dataService.updateResident(resident);
+		Boolean updated = dataService.updateResident(resident);
+
+		// Updated resident
+		ResidentEntity residentUpdated = dataService.findResidentById(residentId);
 
 		// If the resident matches the entity sent back by the data service, return true
 		// that the resident was updated
-		if (updated == resident) {
+		if (residentUpdated == resident) {
 			return true;
 		}
 		// Else return false

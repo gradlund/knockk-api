@@ -256,6 +256,7 @@ public class ResidentDataService {
 		// Use the friendship repository to delete a friendship
 		int rows = friendshipRepository.deleteFriendship(residentId, friendId);
 
+		System.out.println(rows);
 		// If it returns 1, the row has successfully been deleted
 		if (rows == 1) {
 			return true;
@@ -266,14 +267,15 @@ public class ResidentDataService {
 		}
 	}
 
-	public BuildingEntity findBuilding(String street) throws Exception {
-        Optional<BuildingEntity> building = buildingRepository.findByAddress(street);
+	public List<BuildingEntity> findBuilding(String street) throws Exception {
+        List<BuildingEntity> buildings = buildingRepository.findByAddress(street);
 
-		if(building.isPresent()){
-			return building.get();
+		if(buildings.isEmpty()){
+			throw new Exception("Invalid address (case sensitive)."); // Or building hasn't been added by admin yet
+			
 		}
 		else{ 
-			throw new Exception("Invalid address (case sensitive)."); // Or building hasn't been added by admin yet
+			return buildings;
 		}
     }
 
@@ -538,10 +540,10 @@ public class ResidentDataService {
 	 * Updates a resident.
 	 * 
 	 * @param resident : resident entity used to update the resident
-	 * @return a resident entity
+	 * @return a boolean if the resident has been successfully updated
 	 * @throws Exception if the resident could not be updated
 	 */
-	public ResidentEntity updateResident(ResidentEntity resident) throws Exception {
+	public Boolean updateResident(ResidentEntity resident) throws Exception {
 		// Update the resident
 		int rows = residentRepository.update(resident.getAge(), resident.getHometown(), resident.getBiography(),
 				resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(),
@@ -549,7 +551,10 @@ public class ResidentDataService {
 
 		// If one row was updated, return the resident
 		if (rows == 1) {
-			return residentRepository.findById(resident.getId()).get(); // TODO - could I delete this extra call and
+			String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + resident.getId() + "'";
+		List<ResidentEntity> updatedResident = jdbcTemplateObject.query(sql, new ResidentMapper());
+		if(!updatedResident.isEmpty()) return true;
+			// TODO - could I delete this extra call and
 																		// just return the entity passed intot the
 																		// function?
 		}

@@ -3,6 +3,7 @@
  */
 package com.knockk.api.data.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import javax.security.auth.login.CredentialException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.repository.AdminRepository;
@@ -77,10 +79,48 @@ public class AdminDataService {
 		int limit = pageable.getPageSize();
 		//String sort = pageable.getSort();
 		long offset = pageable.getOffset();
+		
+		// try catch
+		Sort sort = pageable.getSort();
+	
+		String[] sortProperties = sort.toString().split(":");
+		String sortBy = sortProperties[0].trim();
+		String direction = sortProperties[1].trim();
+		//System.out.println(sortBy.equals("lastName"));
 
+		// will be weird if "" is passed in
+
+		//String orderBy = "";
 
 		// Pageable does not work with queires
-		List<AdminResidentEntity> residents = residentRepository.findAllByBuildingIdAndVerification(buildingId, verified, limit, offset);
+		List<AdminResidentEntity> residents = new ArrayList();
+		//ASC and DESC are keywords and can not be parameterized
+		// JDBC doesn't support Pageable like JPA
+
+		// TODO - error handling if pagabel is wrong - or if the sort by param is wrong.
+		if(sortBy.equals("lastName")){
+			if(direction.equals("ASC"))
+			residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastName(buildingId, verified, limit, offset);
+			else
+			 residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastNameDesc(buildingId, verified, limit, offset);
+				
+		}
+		else if(sortBy.equals("floor")){
+			if(direction.equals("ASC"))
+			 residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloor(buildingId, verified, limit, offset);
+			 else
+			  residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloorDesc(buildingId, verified, limit, offset);
+		}
+		else{
+			residents = residentRepository.findAllByBuildingIdAndVerification(buildingId, verified, limit, offset);
+		}
+		
+
+		//String orderBy = pageable.getSort().toString().replace(":", "");
+		//System.out.println(orderBy);
+		//System.out.println(direction);
+		
+
 		if(residents.isEmpty()){
 			throw new Exception("Not found. No residents found.");
 		}
@@ -118,5 +158,16 @@ public class AdminDataService {
 		}
 
 		return true;
+	}
+
+	public int getNumberOfResidents(UUID buildingId, boolean verified) throws Exception {
+		int pages = residentRepository.retrieveNumberOfResidents(buildingId, verified);
+
+		System.out.println(pages);
+		if(pages == 0){
+			throw new Exception("Not found. Problem retrieving pages.");
+		}
+
+		return pages;
 	}
 }

@@ -43,26 +43,104 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	Optional<UUID> findLeaseIdByResidentId(UUID residentId);
 
 
+	// @Transactional
+	// @Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
+	// 		+
+	// 		"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+	// 		"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	// 		"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	// 		"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+	// 		"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+			
+	// 		"  ORDER BY :sortBy ASC LIMIT :limit OFFSET :offset"
+	// 		)
+	// 		//" \"Resident\".:orderBy "+
+			
+			
+	// // ORDERBY
+	// // countQuery = "SELECT count(*)" +
+	// // " INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id"
+	// // +
+	// // " INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	// // " INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	// // " INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+	// // " where \"Building\".building_id = :buildingId AND \"Resident\".verified =
+	// // :verified")
+	// List<AdminResidentEntity> findAllByBuildingIdAndVerification(UUID buildingId, boolean verified, 
+	// //Pageable pageable
+	// //String orderBy, 
+	//  String sortBy,
+	//  int limit,
+	// 		long offset
+	// 		// String orderBy
+			 
+	// 		);
+
+	@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
++
+"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+
+"  ORDER BY \"Resident\".resident_id LIMIT :limit OFFSET :offset")
+List<AdminResidentEntity> findAllByBuildingIdAndVerification(UUID buildingId, boolean verified, int limit, long offset);
+
+	@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
+	+
+	"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+	"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+	"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+	
+	"  ORDER BY \"Unit\".floor, \"Unit\".room, \"Resident\".first_name LIMIT :limit OFFSET :offset")
+List<AdminResidentEntity> findAllByBuildingIdAndVerificationSortByFloor(UUID buildingId, boolean verified, int limit, long offset);
+@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
++
+"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+
+"  ORDER BY \"Unit\".floor DESC, \"Unit\".room, \"Resident\".first_name LIMIT :limit OFFSET :offset")
+List<AdminResidentEntity> findAllByBuildingIdAndVerificationSortByFloorDesc(UUID buildingId, boolean verified, int limit, long offset);
+	
+	@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
+	+
+	"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+	"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
+	"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+	
+	"  ORDER BY \"Resident\".last_name, \"Resident\".first_name LIMIT :limit OFFSET :offset")
+List<AdminResidentEntity> findAllByBuildingIdAndVerificationSortByLastName(UUID buildingId, boolean verified, int limit, long offset);
+	
 	@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
 			+
 			"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
 			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
 			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
 			"  INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
-			"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified " +
-			"LIMIT :limit OFFSET :offset")
-	// ORDERBY
-	// countQuery = "SELECT count(*)" +
-	// " INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id"
-	// +
-	// " INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
-	// " INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
-	// " INNER JOIN \"User\" ON \"User\".user_id = \"Resident\".resident_id" +
-	// " where \"Building\".building_id = :buildingId AND \"Resident\".verified =
-	// :verified")
-	List<AdminResidentEntity> findAllByBuildingIdAndVerification(UUID buildingId, boolean verified, int limit,
-			long offset);
+			"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified" +
+			
+			"  ORDER BY \"Resident\".last_name DESC, \"Resident\".first_name ASC LIMIT :limit OFFSET :offset")
+	List<AdminResidentEntity> findAllByBuildingIdAndVerificationSortByLastNameDesc(UUID buildingId, boolean verified, int limit, long offset);
 
+	// @Query(value = "SELECT CEIL(COUNT(\"Resident\".resident_id)::float / :pageSize) from \"Building\"" +
+	// "  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+	// "  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	// "  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	// "  where \"Building\".building_id = :buildingId AND \"Resident\".verified = true")
+	@Query(value = "SELECT Count(\"Resident\".resident_id) from \"Building\"" +
+	"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+	"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+	"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+	"  where \"Building\".building_id = :buildingId AND \"Resident\".verified = :verified")
+    public int retrieveNumberOfResidents(UUID buildingId, boolean verified);
 			@Query(value = "SELECT \"Resident\".resident_id, \"Resident\".first_name, \"Resident\".last_name, \"Resident\".gender, \"User\".email, \"Unit\".floor, \"Unit\".room, \"Lease\".start_date, \"Lease\".end_date, \"Resident\".verified from \"Building\""
 			+
 			"  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +

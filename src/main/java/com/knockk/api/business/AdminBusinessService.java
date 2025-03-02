@@ -96,4 +96,9 @@ public class AdminBusinessService {
 		// }
 		// else{ return false;}
 	}
+
+	public int getNumberOfResidents(UUID buildingId, Boolean verified) throws Exception {
+
+		return dataService.getNumberOfResidents(buildingId, verified);
+	}
 }
