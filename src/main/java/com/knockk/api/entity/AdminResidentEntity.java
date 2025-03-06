@@ -7,8 +7,12 @@ import org.springframework.data.relational.core.mapping.Column;
 
 import com.knockk.api.data.Gender;
 
-@Entity
+/**
+ * NOTE: this is generally not practice. It is better to replicate the tables of a database directly.
+ */
+//@Entity
 public class AdminResidentEntity {
+    
     private UUID residentId;
     private String firstName;
     private String lastName;
@@ -22,6 +26,9 @@ public class AdminResidentEntity {
     private Date leaseEnd;
     private Boolean verified;
 
+    public UUID getBuildingId() {
+        return residentId;
+    }
     public UUID getResidentId() {
         return residentId;
     }

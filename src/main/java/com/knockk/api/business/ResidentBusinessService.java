@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Date;
 
 import javax.security.auth.login.CredentialException;
 
@@ -47,38 +46,20 @@ public class ResidentBusinessService {
 	}
 
 	public List<String> getBuildings(String street) throws Exception {
-        List<BuildingEntity> buildingEntities = dataService.findBuilding(street);
+		List<BuildingEntity> buildingEntities = dataService.findBuilding(street);
 		List<String> buildings = new ArrayList<String>();
 		for (BuildingEntity building : buildingEntities) {
 			System.out.println(building.getName());
 			buildings.add(building.getName());
 		}
 		return buildings;
-    }
+	}
 
-	public UUID createAccount(UserModel credentials) throws Exception{
+	public UUID createAccount(UserModel credentials) throws Exception {
 		// Check if the email exists throw an error, otherwise create the account
 		// Convert to entity
 		return dataService.createAccount(new UserEntity(null, credentials.getEmail(), credentials.getPassword()));
 	}
-
-	// /**
-	//  * Creates a friendship. Used for creating or updating a friendship.
-	//  * 
-	//  * @param invitorId : id of the resident who sent the request
-	//  * @param inviteeId : id of the resident who is receiving the friendship request
-	//  * @return a friendship model that contains details about the friendship
-	//  * @throws Exception
-	//  */
-	// public FriendshipModel createFriendship(UUID invitorId, UUID inviteeId) throws Exception {
-	// 	// TODO: make sure they are valid neighbors; make sure id's aren't the same (invitor == invitee) and make sure friendship doesn't already exist with those same uuids
-	// 	// Use the data service class to create a friendship and store the response as a
-	// 	// friendship entity
-	// 	FriendshipEntity friendship = dataService.createFriendship(invitorId, inviteeId);
-
-	// 	// Convert the entity to a model to return
-	// 	return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
-	// }
 
 	/**
 	 * Deletes a friendship.
@@ -140,12 +121,12 @@ public class ResidentBusinessService {
 		// Use the data service class to update the friendship and store the response as
 		// a friendship entity
 		// If a friendship does not exist, create one
-		try{
-		FriendshipEntity friendship = dataService.updateFriendship(invitorId, inviteeId, isAccepted);
+		try {
+			FriendshipEntity friendship = dataService.updateFriendship(invitorId, inviteeId, isAccepted);
 
-		// Convert the entity to a model to return
-		return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
-		}catch(Exception e){
+			// Convert the entity to a model to return
+			return new FriendshipModel(friendship.getInvitorId(), friendship.getInviteeId(), friendship.isAccepted());
+		} catch (Exception e) {
 			FriendshipEntity friendship = dataService.createFriendship(invitorId, inviteeId);
 
 			// Convert the entity to a model to return
@@ -369,25 +350,39 @@ public class ResidentBusinessService {
 		return false;
 	}
 
-	//public boolean register(ResidentModel resident, UUID leaseId){
-		public boolean register(RegisterModel resident){
-			System.out.println(resident.getGender());
-		ResidentEntity residentEntity = new ResidentEntity(UUID.fromString(resident.getId()), resident.getFirstName(), resident.getLastName(), Gender.valueOf(resident.getGender()), resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(), UUID.fromString(resident.getLeaseId()), false);
-		//UUID id = dataService.getResidentId(resident.getEmail());
+	// public boolean register(ResidentModel resident, UUID leaseId){
+	/**
+	 * Saves a resident
+	 * @param resident : model sent in the request that contains information about the resident
+	 * @return a boolean if the resident was successfully registered
+		 * @throws Exception thrown if there is an error in the data service
+		 */
+		public boolean register(RegisterModel resident) throws Exception {
+		// Convert the model to a entity to be passed to the data service
+		ResidentEntity residentEntity = new ResidentEntity(UUID.fromString(resident.getId()), resident.getFirstName(),
+				resident.getLastName(), Gender.valueOf(resident.getGender()), resident.getAge(), resident.getHometown(),
+				resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(),
+				resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(),
+				UUID.fromString(resident.getLeaseId()), false);
+		
+				// Use the data service to create the resident and return the boolean response
 		return dataService.createResident(residentEntity);
 	}
 
-	public UUID getLease(String address, String name, int floor, int room, String startDate, String endDate) throws Exception{
-		// Get building id from name of the Building table // name isn't unique, so I need address too
+	public UUID getLease(String address, String name, int floor, int room, String startDate, String endDate)
+			throws Exception {
+		// Get building id from name of the Building table // name isn't unique, so I
+		// need address too
 		// With throw an error if it doesn't exist
-		//UUID buildingId = dataService.getBuildingIdByAddressAndName(address, name);
+		// UUID buildingId = dataService.getBuildingIdByAddressAndName(address, name);
 
-		//Using that as a foregin key, get the unit id from the floor and room number
-		//UUID unitId = dataService.getUnitId(buildingId, floor, room);
+		// Using that as a foregin key, get the unit id from the floor and room number
+		// UUID unitId = dataService.getUnitId(buildingId, floor, room);
 
-		// Using that as a foregin key in the Lease table, use the start date and end date to get the lease id
+		// Using that as a foregin key in the Lease table, use the start date and end
+		// date to get the lease id
 		return dataService.getLeaseId(address, name, floor, room, startDate, endDate);
-		
+
 	}
 
 	// TODO: get unit - show an error if no units are registere

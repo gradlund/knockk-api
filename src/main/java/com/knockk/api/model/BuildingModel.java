@@ -2,6 +2,9 @@ package com.knockk.api.model;
 
 import java.util.UUID;
 
+/**
+ * Building model commonly used in the response.
+ */
 public class BuildingModel {
     private String name;
     private UUID id;

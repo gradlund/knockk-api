@@ -235,10 +235,14 @@ public class ResidentDataService {
 		return friendship.get().isAccepted();
 	}
 
-	public boolean createResident(ResidentEntity resident){
-		System.out.println(resident.getGender());
+	public boolean createResident(ResidentEntity resident) throws Exception{
+		
 		int rows = residentRepository.register(resident.getId(), resident.getFirstName(), resident.getLastName(), resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getGender(), resident.getLeaseId(), resident.isVerified());
 		//System.out.println(created);
+
+		if(rows != 1){
+			throw new Exception("Could not save the resident.");
+		}
 		System.out.println(rows);
 		return true;
 	}
@@ -559,6 +563,6 @@ public class ResidentDataService {
 																		// function?
 		}
 		// Else throw exception
-		throw new Exception("Couldn't update resident.");
+		throw new Exception("Could not update resident.");
 	}
 }

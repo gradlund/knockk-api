@@ -118,26 +118,26 @@ public class ResidentEntity {
 	}
 
 
-	public ResidentEntity(String firstName, String lastName, 
-			Gender gender, 
-			int age, String hometown,
-			String biography, String profilePhoto, String backgroundPhoto, String instagram, String snapchat, String x,
-			String facebook, UUID leaseId, boolean verified) {
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.gender = gender;
-		this.age = age;
-		this.hometown = hometown;
-		this.biography = biography;
-		this.profilePhoto = profilePhoto;
-		this.backgroundPhoto = backgroundPhoto;
-		this.instagram = instagram;
-		this.snapchat = snapchat;
-		this.x = x;
-		this.facebook = facebook;
-		this.leaseId = leaseId;
-		this.verified = verified;
-	}
+	// public ResidentEntity(String firstName, String lastName, 
+	// 		Gender gender, 
+	// 		int age, String hometown,
+	// 		String biography, String profilePhoto, String backgroundPhoto, String instagram, String snapchat, String x,
+	// 		String facebook, UUID leaseId, boolean verified) {
+	// 	this.firstName = firstName;
+	// 	this.lastName = lastName;
+	// 	this.gender = gender;
+	// 	this.age = age;
+	// 	this.hometown = hometown;
+	// 	this.biography = biography;
+	// 	this.profilePhoto = profilePhoto;
+	// 	this.backgroundPhoto = backgroundPhoto;
+	// 	this.instagram = instagram;
+	// 	this.snapchat = snapchat;
+	// 	this.x = x;
+	// 	this.facebook = facebook;
+	// 	this.leaseId = leaseId;
+	// 	this.verified = verified;
+	// }
 
 	public UUID getId() {
 		return id;

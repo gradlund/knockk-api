@@ -5,7 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import java.util.Date;
 
+/**
+ * Super class model that the AdminResidentModel extends.
+ */
 public class LeaseModel {
+
+    
     @NotNull
     private UUID buildingId;
     @NotNull

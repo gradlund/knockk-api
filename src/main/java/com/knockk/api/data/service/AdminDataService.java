@@ -10,9 +10,7 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialException;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.repository.AdminRepository;
@@ -20,7 +18,6 @@ import com.knockk.api.data.repository.BuildingRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
-import com.knockk.api.model.BuildingModel;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
 
@@ -41,10 +38,55 @@ public class AdminDataService {
 	 * 
 	 * @param adminRepository : admin repository being injected
 	 */
-	public AdminDataService(AdminRepository adminRepository, BuildingRepository buildingRepository, ResidentRepository residentRepository) {
+	public AdminDataService(AdminRepository adminRepository, BuildingRepository buildingRepository,
+			ResidentRepository residentRepository) {
 		this.adminRepository = adminRepository;
 		this.buildingRepository = buildingRepository;
 		this.residentRepository = residentRepository;
+	}
+
+	/**
+	 * Updates a resident in the database to verified
+	 * 
+	 * @param residentId : id of the resident being updated
+	 * @return a boolean if the resident was successfully updated
+	 * @throws Exception thrown if there is a problem updating the resident
+	 */
+	public Boolean activateResident(UUID residentId) throws Exception {
+		// Update the residents verification status to true
+		int rowsUpdated = residentRepository.activate(residentId);
+
+		// If the number of rows does not equal one, throw an exception because there
+		// was a problem updating the resident
+		if (rowsUpdated != 1) {
+			throw new Exception("Error updating resident.");
+		}
+
+		return true;
+	}
+
+	/**
+	 * Deletes a resident from the database
+	 * 
+	 * @param residentId : id of the resident being deleted
+	 * @return a boolean if the resident was successfully deleted
+	 * @throws Exception thrown if there is a problem deleting the resident
+	 */
+	public Boolean deleteResident(UUID residentId) throws Exception {
+		// TODO: could minimize calls by having the delete return the number of rows
+		// modified; also could current implementation be a race condition?
+		// Delete the resident by id
+		residentRepository.deleteById(residentId);
+
+		// Try to retrieve the resident by their id
+		Optional<AdminResidentEntity> checkDeleted = residentRepository.findResidentById(residentId);
+
+		// If the resident exists, throw an error because it should have been deleted
+		if (checkDeleted.isPresent()) {
+			throw new Exception("Did not delete.");
+		}
+
+		return true;
 	}
 
 	/**
@@ -65,109 +107,130 @@ public class AdminDataService {
 		return id.get();
 	}
 
-    public List<BuildingEntity> findBuildingsByAdminId(UUID adminId) throws Exception {
-       List<BuildingEntity> buildings = buildingRepository.findAllByAdminId(adminId);
+	/**
+	 * Retrieves a list of buildings the admin manages
+	 * 
+	 * @param adminId : id of the admin
+	 * @return a list of building entities
+	 * @throws Exception exception thrown if no buildings could be found by the
+	 *                   admin id
+	 */
+	public List<BuildingEntity> findBuildingsByAdminId(UUID adminId) throws Exception {
+		// Retrieve a list of building entities by admin id
+		List<BuildingEntity> buildings = buildingRepository.findAllByAdminId(adminId);
 
-	   if(buildings.isEmpty()){
-		throw new Exception("Not Found. No buildings found.");
-	   }
-
-	   return buildings;
-    }
-
-	public List<AdminResidentEntity> findResidents(UUID buildingId, boolean verified, Pageable pageable) throws Exception {
-		int limit = pageable.getPageSize();
-		//String sort = pageable.getSort();
-		long offset = pageable.getOffset();
-		
-		// try catch
-		Sort sort = pageable.getSort();
-	
-		String[] sortProperties = sort.toString().split(":");
-		String sortBy = sortProperties[0].trim();
-		String direction = sortProperties[1].trim();
-		//System.out.println(sortBy.equals("lastName"));
-
-		// will be weird if "" is passed in
-
-		//String orderBy = "";
-
-		// Pageable does not work with queires
-		List<AdminResidentEntity> residents = new ArrayList();
-		//ASC and DESC are keywords and can not be parameterized
-		// JDBC doesn't support Pageable like JPA
-
-		// TODO - error handling if pagabel is wrong - or if the sort by param is wrong.
-		if(sortBy.equals("lastName")){
-			if(direction.equals("ASC"))
-			residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastName(buildingId, verified, limit, offset);
-			else
-			 residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastNameDesc(buildingId, verified, limit, offset);
-				
-		}
-		else if(sortBy.equals("floor")){
-			if(direction.equals("ASC"))
-			 residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloor(buildingId, verified, limit, offset);
-			 else
-			  residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloorDesc(buildingId, verified, limit, offset);
-		}
-		else{
-			residents = residentRepository.findAllByBuildingIdAndVerification(buildingId, verified, limit, offset);
-		}
-		
-
-		//String orderBy = pageable.getSort().toString().replace(":", "");
-		//System.out.println(orderBy);
-		//System.out.println(direction);
-		
-
-		if(residents.isEmpty()){
-			throw new Exception("Not found. No residents found.");
+		// If no buildings were returned, throw an exception
+		if (buildings.isEmpty()) {
+			throw new Exception("Not Found. No buildings found.");
 		}
 
-		return residents;
+		// Else return the list
+		return buildings;
 	}
 
+	/**
+	 * Retrieve a resident by resident id.
+	 * 
+	 * @param residentId : id of the resident
+	 * @return the admin resident entity
+	 * @throws Exception thrown if the resident could not be found
+	 */
 	public AdminResidentEntity findResident(UUID residentId) throws Exception {
-		
+		// Retrieve the resident by id
 		Optional<AdminResidentEntity> resident = residentRepository.findResidentById(residentId);
-		if(resident.isEmpty()){
+
+		// If the resident is present, throw an exception
+		if (resident.isEmpty()) {
 			throw new Exception("Not found. No resident found.");
 		}
 
 		return resident.get();
 	}
 
-	public Boolean activateResident(UUID residentId) throws Exception {
-		
-		int rowsUpdated = residentRepository.activate(residentId);
-		if(rowsUpdated != 1){
-			throw new Exception("Error updating resident.");
+	/**
+	 * Retrieve a list of admin resident entities
+	 * 
+	 * @param buildingId : id of the building
+	 * @param verified   : boolean if the residents of that building are verified or
+	 *                   not
+	 * @param pageable   : pagination information
+	 * @return a list of admin resident entities
+	 * @throws Exception thrown if there no residents could be found
+	 */
+	public List<AdminResidentEntity> findResidents(UUID buildingId, boolean verified, Pageable pageable)
+			throws Exception {
+		List<AdminResidentEntity> residents = new ArrayList();
+
+		// Get pagination properties
+		int limit = pageable.getPageSize();
+		String sort = pageable.getSort().toString();
+		long offset = pageable.getOffset();
+
+		// Variables used for sorting
+		// NOTE : pageable does not work within queries, which is why these variables
+		// have to be seperated out
+		// ASC and DESC are keywords and can not be parameterized
+		// JDBC doesn't support Pageable like JPA
+		String sortBy;
+		String direction;
+
+		// TODO: try catch
+
+		// If nothing was passed into the header for sort, default sortBy and direction
+		if (sort.equals("")) {
+			sortBy = "lastName";
+			direction = "ASC";
+		}
+		// Else separate and trim the sort
+		// Sort will look something like this - lastName : ASC
+		else {
+			String[] sortProperties = sort.toString().split(":");
+			sortBy = sortProperties[0].trim();
+			direction = sortProperties[1].trim();
 		}
 
-		return true;
-	}
+		// TODO - error handling if pagabel is wrong - or if the sort by param is wrong.
+		// If sort is by last name, sort by last name
+		if (sortBy.equals("lastName")) {
+			if (direction.equals("ASC"))
+				residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastName(buildingId, verified,
+						limit, offset);
+			else
+				residents = residentRepository.findAllByBuildingIdAndVerificationSortByLastNameDesc(buildingId,
+						verified, limit, offset);
 
-	public Boolean deleteResident(UUID residentId) throws Exception {
-		
-		residentRepository.deleteById(residentId);
-
-		Optional<AdminResidentEntity> checkDeleted = residentRepository.findResidentById(residentId);
-		if(checkDeleted.isPresent()){
-			throw new Exception("Did not delete.");
+		}
+		// If sort is by floor, sort by floor
+		else if (sortBy.equals("floor")) {
+			if (direction.equals("ASC"))
+				residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloor(buildingId, verified,
+						limit, offset);
+			else
+				residents = residentRepository.findAllByBuildingIdAndVerificationSortByFloorDesc(buildingId, verified,
+						limit, offset);
+		}
+		// Default sort, if the sort passed by the api doesn't match
+		else {
+			System.out.println("Sort from request was not valid. Default sorting.");
+			residents = residentRepository.findAllByBuildingIdAndVerification(buildingId, verified, limit, offset);
 		}
 
-		return true;
+		// If the returned sort is empty, throw an exception.
+		if (residents.isEmpty()) {
+			throw new Exception("Not found. No residents found.");
+		}
+
+		return residents;
 	}
 
+	// TODO: delte method
 	public int getNumberOfResidents(UUID buildingId, boolean verified) throws Exception {
-		int pages = residentRepository.retrieveNumberOfResidents(buildingId, verified);
+		int numOfResidents = residentRepository.retrieveNumberOfResidents(buildingId, verified);
 
-		System.out.println(pages);
-		if(pages == 0){
+		if (numOfResidents == 0) {
 			throw new Exception("Not found. Problem retrieving pages.");
 		}
 
-		return pages;
+		return numOfResidents;
 	}
 }
