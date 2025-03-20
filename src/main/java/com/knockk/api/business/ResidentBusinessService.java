@@ -353,19 +353,21 @@ public class ResidentBusinessService {
 	// public boolean register(ResidentModel resident, UUID leaseId){
 	/**
 	 * Saves a resident
-	 * @param resident : model sent in the request that contains information about the resident
+	 * 
+	 * @param resident : model sent in the request that contains information about
+	 *                 the resident
 	 * @return a boolean if the resident was successfully registered
-		 * @throws Exception thrown if there is an error in the data service
-		 */
-		public boolean register(RegisterModel resident) throws Exception {
+	 * @throws Exception thrown if there is an error in the data service
+	 */
+	public boolean register(RegisterModel resident) throws Exception {
 		// Convert the model to a entity to be passed to the data service
 		ResidentEntity residentEntity = new ResidentEntity(UUID.fromString(resident.getId()), resident.getFirstName(),
 				resident.getLastName(), Gender.valueOf(resident.getGender()), resident.getAge(), resident.getHometown(),
 				resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(),
 				resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(),
 				UUID.fromString(resident.getLeaseId()), false);
-		
-				// Use the data service to create the resident and return the boolean response
+
+		// Use the data service to create the resident and return the boolean response
 		return dataService.createResident(residentEntity);
 	}
 

@@ -8,14 +8,14 @@ public class NeighborRoomModel {
     private int floor;
     private int room;
 
-    public NeighborRoomModel(String direction, int floor, int room){
+    public NeighborRoomModel(String direction, int floor, int room) {
         this.direction = direction;
         this.floor = floor;
         this.room = room;
     }
 
     // Getters needed for making models
-    public String getDirection(){
+    public String getDirection() {
         return this.direction;
     }
 

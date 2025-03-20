@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Date;
 
 import javax.security.auth.login.CredentialException;
 import javax.sql.DataSource;
@@ -58,24 +57,25 @@ public class ResidentDataService {
 	public ResidentDataService(BuildingRepository buildingRepository, DataSource dataSource,
 			FriendshipRepository friendshipRepository,
 			LeaseRepository leaseRepository, UnitRepository unitRepository, UserRepository userRepository,
-			ResidentRepository residentRepository) {
+			ResidentRepository residentRepository, JdbcTemplate jdbcTemplateObject) {
 		this.buildingRepository = buildingRepository;
 		this.friendshipRepository = friendshipRepository;
 		this.leaseRepository = leaseRepository;
 		this.unitRepository = unitRepository;
 		this.userRepository = userRepository;
 		this.residentRepository = residentRepository;
-		this.jdbcTemplateObject = new JdbcTemplate(dataSource);
+		// this.jdbcTemplateObject = new JdbcTemplate(dataSource);
+		this.jdbcTemplateObject = jdbcTemplateObject;
 	}
 
-	public UUID createAccount(UserEntity user) throws Exception{
+	public UUID createAccount(UserEntity user) throws Exception {
 		// Check if email exists, if it does, throw error
 		Optional<UUID> userId = userRepository.findByEmail(user.getEmail());
-		if(userId.isPresent()){
+		if (userId.isPresent()) {
 			throw new Exception("User already exists with that email.");
 		}
 		// Else insert the user and return the id
-		return userRepository.saveAccount(user.getEmail(), user.getPassword()); //TODO; combine calls
+		return userRepository.saveAccount(user.getEmail(), user.getPassword()); // TODO; combine calls
 
 	}
 
@@ -222,7 +222,8 @@ public class ResidentDataService {
 	 *         doesn't exist
 	 */
 	public boolean checkConnected(UUID residentId, UUID friendId) {
-		// TO-DO : there will be an error if there are two friendships with the same id's, be careful when manually doing this
+		// TO-DO : there will be an error if there are two friendships with the same
+		// id's, be careful when manually doing this
 		// Retrieve a frindship given the resident and friend is
 		Optional<FriendshipEntity> friendship = friendshipRepository.findByResidentIdAndNeighborId(residentId,
 				friendId);
@@ -235,12 +236,15 @@ public class ResidentDataService {
 		return friendship.get().isAccepted();
 	}
 
-	public boolean createResident(ResidentEntity resident) throws Exception{
-		
-		int rows = residentRepository.register(resident.getId(), resident.getFirstName(), resident.getLastName(), resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(), resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(), resident.getFacebook(), resident.getGender(), resident.getLeaseId(), resident.isVerified());
-		//System.out.println(created);
+	public boolean createResident(ResidentEntity resident) throws Exception {
 
-		if(rows != 1){
+		int rows = residentRepository.register(resident.getId(), resident.getFirstName(), resident.getLastName(),
+				resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(),
+				resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(),
+				resident.getFacebook(), resident.getGender(), resident.getLeaseId(), resident.isVerified());
+		// System.out.println(created);
+
+		if (rows != 1) {
 			throw new Exception("Could not save the resident.");
 		}
 		System.out.println(rows);
@@ -272,16 +276,15 @@ public class ResidentDataService {
 	}
 
 	public List<BuildingEntity> findBuilding(String street) throws Exception {
-        List<BuildingEntity> buildings = buildingRepository.findByAddress(street);
+		List<BuildingEntity> buildings = buildingRepository.findByAddress(street);
 
-		if(buildings.isEmpty()){
+		if (buildings.isEmpty()) {
 			throw new Exception("Invalid address (case sensitive)."); // Or building hasn't been added by admin yet
-			
-		}
-		else{ 
+
+		} else {
 			return buildings;
 		}
-    }
+	}
 
 	/**
 	 * Retrieves the friendship of two residents
@@ -384,27 +387,28 @@ public class ResidentDataService {
 		return unit.get();
 	}
 
-	public UUID getBuildingIdByAddressAndName(String address, String name) throws Exception{
+	public UUID getBuildingIdByAddressAndName(String address, String name) throws Exception {
 
 		// Find the building id
 		Optional<UUID> buildingId = buildingRepository.findByAddressAndName(address, name);
 
 		// If the buidlingn exsits by address and name, return the id
-		if(buildingId.isPresent()){
+		if (buildingId.isPresent()) {
 			return buildingId.get();
 		}
 		// Else throw exception
 		throw new Exception("Building does not exist with given street and address.");
 	}
 
-	public UUID getLeaseId(String address, String buildingName, int floor, int room, String startDate, String endDate) throws Exception{
+	public UUID getLeaseId(String address, String buildingName, int floor, int room, String startDate, String endDate)
+			throws Exception {
 
 		System.out.println(address + buildingName + floor + room + startDate + endDate);
 		// Find the lease id
 		Optional<UUID> leaseId = leaseRepository.findLeaseId(address, buildingName, floor, room, startDate, endDate);
 
 		// If the buidlingn exsits by address and name, return the id
-		if(leaseId.isPresent()){
+		if (leaseId.isPresent()) {
 			System.out.println(leaseId.get());
 			return leaseId.get();
 		}
@@ -413,27 +417,28 @@ public class ResidentDataService {
 	}
 
 	// public UUID getUnitId(UUID buildingId, int floor, int room) throws Exception{
-	// 	// Find unit id
-	// 	Optional<UUID> unitId = unitRepository.findUnitId(buildingId, floor, room);
+	// // Find unit id
+	// Optional<UUID> unitId = unitRepository.findUnitId(buildingId, floor, room);
 
-	// 	// If the unit exists with that criteria, return the id
-	// 	if(unitId.isPresent()){
-	// 		return unitId.get();
-	// 	}
-	// 	// Else throw exception
-	// 	throw new Exception("Unit does not exist.");
+	// // If the unit exists with that criteria, return the id
+	// if(unitId.isPresent()){
+	// return unitId.get();
+	// }
+	// // Else throw exception
+	// throw new Exception("Unit does not exist.");
 	// }
 
-	// private UUID getLeaseId(UUID unitId, Date startDate, Date endDate) throws Exception{
-	// 	// Find lease id
-	// 	Optional<UUID> leaseId = unitRepository.findUnitId(buildingId, floor, room);
+	// private UUID getLeaseId(UUID unitId, Date startDate, Date endDate) throws
+	// Exception{
+	// // Find lease id
+	// Optional<UUID> leaseId = unitRepository.findUnitId(buildingId, floor, room);
 
-	// 	// If the unit exists with that criteria, return the id
-	// 	if(unitId.isPresent()){
-	// 		return unitId.get();
-	// 	}
-	// 	// Else throw exception
-	// 	throw new Exception("Lease does not exist.");
+	// // If the unit exists with that criteria, return the id
+	// if(unitId.isPresent()){
+	// return unitId.get();
+	// }
+	// // Else throw exception
+	// throw new Exception("Lease does not exist.");
 	// }
 
 	// TODO: do I need to retrieve the whole residententity?
@@ -491,9 +496,9 @@ public class ResidentDataService {
 	 * 
 	 * @param id : id of the resident
 	 * @return a resident entity
-		 * @throws Exception 
-		 */
-		public ResidentEntity getResidentEntity(UUID id) {
+	 * @throws Exception
+	 */
+	public ResidentEntity getResidentEntity(UUID id) {
 		// TODO: switch to using repository or using prepared statement
 		String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + id + "'";
 		List<ResidentEntity> resident = jdbcTemplateObject.query(sql, new ResidentMapper());
@@ -503,7 +508,7 @@ public class ResidentDataService {
 		if (resident.isEmpty()) {
 			throw new NoSuchElementException("Problem retrieving resident.");
 		}
-	
+
 		// Return the resident
 		return resident.get(0);
 	}
@@ -556,11 +561,12 @@ public class ResidentDataService {
 		// If one row was updated, return the resident
 		if (rows == 1) {
 			String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + resident.getId() + "'";
-		List<ResidentEntity> updatedResident = jdbcTemplateObject.query(sql, new ResidentMapper());
-		if(!updatedResident.isEmpty()) return true;
+			List<ResidentEntity> updatedResident = jdbcTemplateObject.query(sql, new ResidentMapper());
+			if (!updatedResident.isEmpty())
+				return true;
 			// TODO - could I delete this extra call and
-																		// just return the entity passed intot the
-																		// function?
+			// just return the entity passed intot the
+			// function?
 		}
 		// Else throw exception
 		throw new Exception("Could not update resident.");

@@ -26,7 +26,7 @@ public class FriendshipEntity {
     private UUID inviteeId;
 
     @Column("accepted")
-    private boolean accepted; //this will alter the response
+    private boolean accepted; // this will alter the response
 
     public UUID getInvitorId() {
         return invitorId;

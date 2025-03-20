@@ -9,6 +9,7 @@ import com.knockk.api.entity.UserEntity;
 
 /**
  * Class that maps the User table
+ * 
  * @author graceradlund
  */
 public class UserRowMapper implements RowMapper<UserEntity> {
@@ -18,6 +19,7 @@ public class UserRowMapper implements RowMapper<UserEntity> {
 	 */
 	@Override
 	public UserEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-		return new UserEntity(rs.getObject("user_id", java.util.UUID.class), rs.getString("email"), rs.getString("password"));
+		return new UserEntity(rs.getObject("user_id", java.util.UUID.class), rs.getString("email"),
+				rs.getString("password"));
 	}
 }

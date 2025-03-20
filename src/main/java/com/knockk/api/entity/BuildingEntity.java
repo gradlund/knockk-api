@@ -54,11 +54,11 @@ public class BuildingEntity {
         this.adminId = adminId;
     }
 
-    public UUID getId(){
+    public UUID getId() {
         return buildingId;
     }
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
@@ -77,5 +77,5 @@ public class BuildingEntity {
     public ArrayList<Integer> getNoRoomsLeft() {
         return noRoomsLeft;
     }
-    
+
 }

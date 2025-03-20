@@ -515,8 +515,9 @@ public class ResidentController {
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
 		// Problem updating or saving
-		else if (e.getMessage().toLowerCase().contains("could not update") || e.getMessage().toLowerCase().contains("could not save")) { // thrown in data service for updating
-																				// resident
+		else if (e.getMessage().toLowerCase().contains("could not update")
+				|| e.getMessage().toLowerCase().contains("could not save")) { // thrown in data service for updating
+			// resident
 			response.setMessage("Problem updating or saving.");
 			response.setStatus(500); // TODO - should be a diffenent stat
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response,

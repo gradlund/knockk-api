@@ -10,13 +10,13 @@ import java.util.Date;
  */
 public class LeaseModel {
 
-    
     @NotNull
     private UUID buildingId;
     @NotNull
     private int floor;
     @NotNull
     private int room;
+    // NOTE: the entity is LeaseStart and LeaseEnd
     @NotNull
     private Date startDate;
     @NotNull

@@ -2,10 +2,11 @@ package com.knockk.api.model;
 
 /**
  * Model used in the response entity
+ * 
  * @param <T> generic used for the value of the HashMap
  */
 public class ResponseModel<T> {
-	
+
 	private T data;
 	private String message;
 	private int status;
@@ -15,9 +16,8 @@ public class ResponseModel<T> {
 		this.message = message;
 		this.status = status;
 	}
-	
-	
-	//Constructor used for error handling - doesn't include status
+
+	// Constructor used for error handling - doesn't include status
 	public ResponseModel(T data) {
 		this.data = data;
 	}

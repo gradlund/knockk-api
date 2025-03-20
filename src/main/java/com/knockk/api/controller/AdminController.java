@@ -261,6 +261,8 @@ public class AdminController {
 			UUID residentId = UUID.fromString(request.getResidentId());
 
 			// Otherwise, activate the account
+			// TODO: should I return the resident id instead and ave the activateResident
+			// method return void?
 			Boolean updated = service.activateResident(residentId);
 
 			// Return a response

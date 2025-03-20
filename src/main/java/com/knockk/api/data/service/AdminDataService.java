@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.knockk.api.data.repository.AdminRepository;
 import com.knockk.api.data.repository.BuildingRepository;
 import com.knockk.api.data.repository.ResidentRepository;
+import com.knockk.api.data.repository.UserRepository;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
 
@@ -31,6 +32,7 @@ public class AdminDataService {
 
 	private AdminRepository adminRepository;
 	private BuildingRepository buildingRepository;
+	private UserRepository userRepository;
 	private ResidentRepository residentRepository;
 
 	/**
@@ -39,9 +41,11 @@ public class AdminDataService {
 	 * @param adminRepository : admin repository being injected
 	 */
 	public AdminDataService(AdminRepository adminRepository, BuildingRepository buildingRepository,
+			UserRepository userRepository,
 			ResidentRepository residentRepository) {
 		this.adminRepository = adminRepository;
 		this.buildingRepository = buildingRepository;
+		this.userRepository = userRepository;
 		this.residentRepository = residentRepository;
 	}
 
@@ -68,6 +72,8 @@ public class AdminDataService {
 	/**
 	 * Deletes a resident from the database
 	 * 
+	 * TODO: eliminate a race condition!
+	 * 
 	 * @param residentId : id of the resident being deleted
 	 * @return a boolean if the resident was successfully deleted
 	 * @throws Exception thrown if there is a problem deleting the resident
@@ -76,7 +82,9 @@ public class AdminDataService {
 		// TODO: could minimize calls by having the delete return the number of rows
 		// modified; also could current implementation be a race condition?
 		// Delete the resident by id
+		// TODO: TODO: race condition!!
 		residentRepository.deleteById(residentId);
+		userRepository.deleteById(residentId);
 
 		// Try to retrieve the resident by their id
 		Optional<AdminResidentEntity> checkDeleted = residentRepository.findResidentById(residentId);
@@ -150,6 +158,8 @@ public class AdminDataService {
 	/**
 	 * Retrieve a list of admin resident entities
 	 * 
+	 * TODO: handle if buildingId is null
+	 * 
 	 * @param buildingId : id of the building
 	 * @param verified   : boolean if the residents of that building are verified or
 	 *                   not
@@ -166,28 +176,38 @@ public class AdminDataService {
 		String sort = pageable.getSort().toString();
 		long offset = pageable.getOffset();
 
+		String sortBy;
+		String direction;
+
 		// Variables used for sorting
 		// NOTE : pageable does not work within queries, which is why these variables
 		// have to be seperated out
 		// ASC and DESC are keywords and can not be parameterized
 		// JDBC doesn't support Pageable like JPA
-		String sortBy;
-		String direction;
-
-		// TODO: try catch
-
-		// If nothing was passed into the header for sort, default sortBy and direction
-		if (sort.equals("")) {
+		if (sort.isEmpty()) { // sort.isEmpty() doesn't work
+			System.out.println("Sort is empty");
 			sortBy = "lastName";
 			direction = "ASC";
+		} else {
+			// Get the sort string and parse it safely
+			String sortString = sort.toString(); // e.g., "lastName: ASC" or "lastName, ASC"
+			if (sortString.contains(":")) {
+				String[] parts = sortString.split(":");
+				sortBy = parts[0].trim();
+				direction = parts[1].trim().replace(",", "").toUpperCase(); // Normalize to ASC/DESC
+			} else if (sortString.contains(",")) {
+				String[] parts = sortString.split(",");
+				sortBy = parts[0].trim();
+				direction = parts[1].trim().toUpperCase(); // Normalize to ASC/DESC
+			} else {
+				// Fallback
+				sortBy = "lastName";
+				direction = "ASC";
+			}
 		}
-		// Else separate and trim the sort
-		// Sort will look something like this - lastName : ASC
-		else {
-			String[] sortProperties = sort.toString().split(":");
-			sortBy = sortProperties[0].trim();
-			direction = sortProperties[1].trim();
-		}
+
+		System.out.println(sortBy);
+		System.out.println(direction);
 
 		// TODO - error handling if pagabel is wrong - or if the sort by param is wrong.
 		// If sort is by last name, sort by last name

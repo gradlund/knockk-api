@@ -13,12 +13,14 @@ import com.knockk.api.entity.AdminEntity;
 
 /**
  * Inferface for the admin repository
+ * 
  * @author graceradlund
  */
 public interface AdminRepository extends CrudRepository<AdminEntity, UUID> {
-	
+
 	/**
 	 * Finds the id of an admin, given their username and password
+	 * 
 	 * @param username : username of the admin
 	 * @param password : password of the admin
 	 * @return a UUID if the credentials are valid

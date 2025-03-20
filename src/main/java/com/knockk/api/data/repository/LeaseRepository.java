@@ -35,12 +35,13 @@ public interface LeaseRepository extends CrudRepository<LeaseEntity, UUID> {
     // public Optional<UUID> findLeaseIdByUnitId(UUID unitID);
 
     // @Query(value = "SELECT \"Resident\".resident_id from \"Unit\"" +
-    // "  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
-    // "  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
-    // "  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
+    // " INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+    // " INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
+    // " where \"Unit\".floor = :floor AND \"Unit\".room = :room")
     @Query(value = "SELECT \"Lease\".lease_id from \"Building\"" +
-    "  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
-    "  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
-    "  where \"Building\".address = :address AND \"Building\".name = :buildingName AND \"Unit\".floor = :floor AND \"Unit\".room = :room AND \"Lease\".start_date = CAST(:startDate AS DATE) AND \"Lease\".end_date = CAST(:endDate AS DATE)")
-    Optional<UUID> findLeaseId(String address, String buildingName, int floor, int room, String startDate, String endDate);
+            "  INNER JOIN \"Unit\" ON \"Unit\".fk_building_id = \"Building\".building_id" +
+            "  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
+            "  where \"Building\".address = :address AND \"Building\".name = :buildingName AND \"Unit\".floor = :floor AND \"Unit\".room = :room AND \"Lease\".start_date = CAST(:startDate AS DATE) AND \"Lease\".end_date = CAST(:endDate AS DATE)")
+    Optional<UUID> findLeaseId(String address, String buildingName, int floor, int room, String startDate,
+            String endDate);
 }

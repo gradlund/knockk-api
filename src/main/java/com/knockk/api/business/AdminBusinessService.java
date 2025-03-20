@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialException;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -43,28 +42,42 @@ public class AdminBusinessService {
 	 * Activate a resident by resident id
 	 * 
 	 * NOTE: this updates the verified column in the database
+	 * NOTE: the data service class never returns false, it will either throw an
+	 * exception or return true
 	 * 
 	 * @param residentId : id of the resident being updated
 	 * @return a boolean if the resident was successfully updated
 	 * @throws Exception thrown if there is an error in the data service
 	 */
 	public Boolean activateResident(UUID residentId) throws Exception {
+		if (residentId == null) {
+			throw new Exception("Error updating resident. Resident id is null.");
+		}
 		return dataService.activateResident(residentId);
 	}
 
 	/**
 	 * Delete a resident by resident it
 	 * 
+	 * NOTE: also never will return false; will return true if success, or throw an
+	 * exception
+	 * Exception-driven error handling
+	 * 
 	 * @param residentId : id of the resident being deleted
 	 * @return a boolean if the resident was successfully deleted
 	 * @throws Exception thrown if there is an error in the data service
 	 */
 	public Boolean deleteResident(UUID residentId) throws Exception {
+		if (residentId == null) {
+			throw new Exception("Error deleting resident. Resident id is null.");
+		}
 		return dataService.deleteResident(residentId);
 	}
 
 	/**
 	 * Get a list of buildings by admin id
+	 * 
+	 * TODO: should make sure admin id is valid and not null
 	 * 
 	 * @param adminId : id of the admin who manages the building(s)
 	 * @return a list of building models

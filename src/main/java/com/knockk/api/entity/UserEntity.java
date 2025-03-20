@@ -11,14 +11,14 @@ import org.springframework.data.relational.core.mapping.Table;
  */
 @Table("User")
 public class UserEntity {
-	//Make sure the column names match
+	// Make sure the column names match
 	@Id
 	@Column("user_id")
 	private UUID residentId;
-	
+
 	@Column("email")
 	private String email;
-	
+
 	@Column("password")
 	private String password;
 

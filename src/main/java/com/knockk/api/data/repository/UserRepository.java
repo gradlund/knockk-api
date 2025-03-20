@@ -27,7 +27,7 @@ public interface UserRepository extends CrudRepository<UserEntity, UUID> {
 
 	@Query(value = "SELECT user_id from \"User\" where email = :email")
 	public Optional<UUID> findByEmail(String email);
-	
+
 	@Query(value = "INSERT INTO \"User\" (email, password) VALUES (:email, :password) RETURNING user_id")
 	public UUID saveAccount(String email, String password);
 }

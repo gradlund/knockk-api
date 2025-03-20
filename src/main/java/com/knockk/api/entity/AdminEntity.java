@@ -14,7 +14,7 @@ import org.springframework.data.relational.core.mapping.Table;
  */
 @Table("Admin")
 public class AdminEntity {
-	//Make sure the column names match
+	// Make sure the column names match
 	@Id
 	@Column("admin_id")
 	private UUID adminId;

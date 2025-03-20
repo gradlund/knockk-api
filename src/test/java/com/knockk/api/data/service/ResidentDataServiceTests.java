@@ -3,6 +3,9 @@
 // Tests generated with the help of ChatGPT 4o mini
 package com.knockk.api.data.service;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,7 +34,9 @@ import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
 import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.entity.UserEntity;
 import com.knockk.api.data.Gender;
+import com.knockk.api.data.mapper.ResidentMapper;
 
 public class ResidentDataServiceTests {
 
@@ -55,10 +60,6 @@ public class ResidentDataServiceTests {
     @Mock
     private ResidentRepository residentRepository;
 
-    // Mock the data service class to call methods.
-    @Mock
-    private ResidentDataService residentDataService;
-
     // Mock the UnitRepository to simulate interactions with the database.
     @Mock
     private UnitRepository unitRepository;
@@ -69,11 +70,16 @@ public class ResidentDataServiceTests {
     @Mock
     private JdbcTemplate jdbcTemplateObject;
 
+    // Service instance with mocks injected by Mockito
+    @InjectMocks
+    private ResidentDataService residentDataService;
+
     // Test data to be used in multiple test cases.
     private String validEmail = "testuser@example.com";
     private String validPassword = "password123";
     private UUID validId = UUID.randomUUID(); // A mock UUID to simulate a valid resident ID.
     private ResidentEntity mockResident;
+    private UserEntity user;
 
     // Mock test building information
     private BuildingEntity mockBuilding;
@@ -102,10 +108,6 @@ public class ResidentDataServiceTests {
         // Initialize the mocks before each test method
         MockitoAnnotations.openMocks(this);
 
-        // Inject mocks into the service.
-        residentDataService = new ResidentDataService(buildingRepository, dataSource, friendshipRepository,
-                leaseRepository, unitRepository, userRepository, residentRepository);
-
         // Initialize building data, lease and unit data
         noRoomsRight = new ArrayList<>(Arrays.asList(22, 56));
         noRoomsLeft = new ArrayList<>(Arrays.asList(32, 66));
@@ -130,6 +132,51 @@ public class ResidentDataServiceTests {
         residentId = UUID.randomUUID();
         friendId = UUID.randomUUID();
 
+        user = new UserEntity(residentId, validEmail, validPassword);
+
+    }
+
+    @Test
+    public void testCreateAccount_Success() throws Exception {
+        // Arrange: Set up a new user with no existing email
+        user.setEmail("newuser@example.com"); // Set email
+        user.setPassword("password123"); // Set password
+        UUID newUserId = UUID.randomUUID(); // Expected returned ID
+
+        // Mock repository to indicate email doesn't exist and save returns new ID
+        when(userRepository.findByEmail("newuser@example.com")).thenReturn(Optional.empty());
+        when(userRepository.saveAccount("newuser@example.com", "password123")).thenReturn(newUserId);
+
+        // Act: Call the method to create the account
+        UUID result = residentDataService.createAccount(user);
+
+        // Assert: Verify the returned ID matches and repository methods were called
+        assertEquals(newUserId, result);
+        verify(userRepository, times(1)).findByEmail("newuser@example.com");
+        verify(userRepository, times(1)).saveAccount("newuser@example.com", "password123");
+        verifyNoMoreInteractions(userRepository);
+    }
+
+    @Test
+    public void testCreateAccount_EmailAlreadyExists_ThrowsException() {
+        // Arrange: Set up a user with an existing email
+        user.setEmail("existinguser@example.com");
+        user.setPassword("password123");
+        UUID existingUserId = UUID.randomUUID();
+
+        // Mock repository to indicate email already exists
+        when(userRepository.findByEmail("existinguser@example.com")).thenReturn(Optional.of(existingUserId));
+
+        // Act & Assert: Expect an exception when email is taken
+        Exception exception = assertThrows(Exception.class, () -> {
+            residentDataService.createAccount(user);
+        });
+
+        // Verify the exception message and that saveAccount wasn't called
+        assertEquals("User already exists with that email.", exception.getMessage());
+        verify(userRepository, times(1)).findByEmail("existinguser@example.com");
+        verify(userRepository, never()).saveAccount(anyString(), anyString());
+        verifyNoMoreInteractions(userRepository);
     }
 
     // Test case for checking if the given floor is between the top and bottom
@@ -335,27 +382,24 @@ public class ResidentDataServiceTests {
      * In this test, we mock the database response to test both success and failure
      * cases.
      */
-    // @Test
-    // public void testCheckVerified_ValidResident_ReturnsVerifiedStatus() throws
-    // CredentialException {
-    // mockResident.setVerified(true); // Set the verified flag to true
-    // List<ResidentEntity> mockResidentList =
-    // Collections.singletonList(mockResident);
+    @Test
+    public void testCheckVerified_ResidentVerified_Success() throws CredentialException {
+        // Arrange: Set up a resident ID and a verified resident
+        mockResident.setVerified(true); // Resident is verified
+        List<ResidentEntity> residents = List.of(mockResident); // List with one resident
 
-    // // Mock the database response for the query
-    // when(jdbcTemplateObject.query(anyString(), any(ResidentMapper.class)))
-    // .thenReturn(mockResidentList);
+        // Mock JdbcTemplate query to return the resident list
+        String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + residentId + "'";
+        when(jdbcTemplateObject.query(eq(sql), any(ResidentMapper.class))).thenReturn(residents);
 
-    // // Act: Call the method under test
-    // boolean isVerified = residentDataService.checkVerified(validId);
+        // Act: Call the method to check verification status
+        boolean result = residentDataService.checkVerified(residentId);
 
-    // // Assert: Verify that the method returns the expected verified status
-    // assertTrue(isVerified);
-
-    // // Verify that the query method was called with the correct SQL
-    // verify(jdbcTemplateObject, times(1)).query(anyString(),
-    // any(ResidentMapper.class));
-    // }
+        // Assert: Verify the resident is verified and JdbcTemplate was called
+        assertTrue(result);
+        verify(jdbcTemplateObject, times(1)).query(eq(sql), any(ResidentMapper.class));
+        verifyNoMoreInteractions(jdbcTemplateObject);
+    }
 
     /**
      * Test to verify that the method throws a CredentialException when no resident
@@ -364,19 +408,24 @@ public class ResidentDataServiceTests {
      * exception should
      * be thrown to indicate invalid credentials.
      */
-    // @Test
-    // public void testCheckVerified_InvalidResident_ThrowsCredentialException()
-    // throws CredentialException {
-    // // Arrange: Create a resident ID that doesn't exist in the database
-    // UUID residentId = UUID.randomUUID();
+    @Test
+    public void testCheckVerified_ResidentNotVerified_Success() throws CredentialException {
+        // Arrange: Set up an unverified resident
+        mockResident.setVerified(false); // Resident is not verified
+        List<ResidentEntity> residents = List.of(mockResident);
 
-    // // Mock the database response to return an empty list (no resident found)
-    // when(jdbcTemplateObject.query(anyString(), any(ResidentMapper.class)))
-    // .thenReturn(Collections.emptyList());
+        // Mock JdbcTemplate query to return the resident list
+        String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + residentId + "'";
+        when(jdbcTemplateObject.query(eq(sql), any(ResidentMapper.class))).thenReturn(residents);
 
-    // // Act: Call the method under test, which should throw a CredentialException
-    // residentDataService.checkVerified(residentId);
-    // }
+        // Act: Call the method to check verification status
+        boolean result = residentDataService.checkVerified(residentId);
+
+        // Assert: Verify the resident is not verified and JdbcTemplate was called
+        assertFalse(result);
+        verify(jdbcTemplateObject, times(1)).query(eq(sql), any(ResidentMapper.class));
+        verifyNoMoreInteractions(jdbcTemplateObject);
+    }
 
     /**
      * Test to verify that a new friendship is created successfully when no

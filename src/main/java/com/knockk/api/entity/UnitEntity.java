@@ -11,22 +11,22 @@ import org.springframework.data.relational.core.mapping.Table;
  */
 @Table("Unit")
 public class UnitEntity {
-    //Make sure the column names match
-	@Id
-	@Column("unit_id")
-	private UUID unitId;
+    // Make sure the column names match
+    @Id
+    @Column("unit_id")
+    private UUID unitId;
 
-	@Column("floor")
-	private int floor;
+    @Column("floor")
+    private int floor;
 
-	@Column("room")
-	private int room;
+    @Column("room")
+    private int room;
 
     @Column("number_of_bedrooms")
-	private int numberOfBedrooms;
+    private int numberOfBedrooms;
 
     @Column("fk_building_id")
-	private UUID buildingId;
+    private UUID buildingId;
 
     public UnitEntity(UUID unitId, int floor, int room, int numberOfBedrooms, UUID buildingId) {
         this.unitId = unitId;
@@ -44,7 +44,7 @@ public class UnitEntity {
         return room;
     }
 
-    public UUID getBuildingId(){
+    public UUID getBuildingId() {
         return buildingId;
     }
 }

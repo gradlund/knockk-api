@@ -12,6 +12,7 @@ import com.knockk.api.entity.AdminEntity;
 
 /**
  * Class that maps the Admin table
+ * 
  * @author graceradlund
  */
 public class AdminRowMapper implements RowMapper<AdminEntity> {
@@ -21,6 +22,7 @@ public class AdminRowMapper implements RowMapper<AdminEntity> {
 	 */
 	@Override
 	public AdminEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-		return new AdminEntity(rs.getObject("admin_id", java.util.UUID.class), rs.getString("username"), rs.getString("password"));
+		return new AdminEntity(rs.getObject("admin_id", java.util.UUID.class), rs.getString("username"),
+				rs.getString("password"));
 	}
 }

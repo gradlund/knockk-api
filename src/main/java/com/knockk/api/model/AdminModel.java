@@ -14,7 +14,7 @@ public class AdminModel {
 	private String username;
 	@NotNull
 	private String password;
-	
+
 	public AdminModel(String email, String password) {
 		this.username = email;
 		this.password = password;

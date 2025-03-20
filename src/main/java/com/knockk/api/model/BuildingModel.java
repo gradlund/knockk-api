@@ -21,5 +21,5 @@ public class BuildingModel {
         this.name = name;
         this.id = id;
     }
-    
+
 }
