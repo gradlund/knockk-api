@@ -1,9 +1,0 @@
-com.knockk.api
-com.knockk.api.business
-com.knockk.api.controller
-com.knockk.api.data
-com.knockk.api.data.mapper
-com.knockk.api.data.repository
-com.knockk.api.data.service
-com.knockk.api.entity
-com.knockk.api.model
