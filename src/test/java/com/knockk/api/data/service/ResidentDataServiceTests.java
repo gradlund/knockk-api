@@ -30,6 +30,7 @@ import com.knockk.api.data.repository.LeaseRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
+import com.knockk.api.entity.AdminEntity;
 import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.ResidentEntity;
@@ -162,10 +163,10 @@ public class ResidentDataServiceTests {
         // Arrange: Set up a user with an existing email
         user.setEmail("existinguser@example.com");
         user.setPassword("password123");
-        UUID existingUserId = UUID.randomUUID();
+        UserEntity userEntity = new UserEntity(residentId, user.getEmail(), user.getPassword());
 
         // Mock repository to indicate email already exists
-        when(userRepository.findByEmail("existinguser@example.com")).thenReturn(Optional.of(existingUserId));
+        when(userRepository.findByEmail("existinguser@example.com")).thenReturn(Optional.of(userEntity));
 
         // Act & Assert: Expect an exception when email is taken
         Exception exception = assertThrows(Exception.class, () -> {
@@ -767,7 +768,7 @@ public class ResidentDataServiceTests {
         when(userRepository.findByEmailAndPassword(validEmail, validPassword)).thenReturn(Optional.of(validId));
 
         // Call the service method with valid credentials and capture the result.
-        UUID result = residentDataService.findResidentByEmailAndPassword(validEmail, validPassword);
+        UserEntity result = residentDataService.findResidentByEmailAndPassword(validEmail, validPassword);
 
         // Assert that the returned UUID is not null, indicating a successful login.
         assertNotNull(result);

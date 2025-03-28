@@ -5,6 +5,7 @@ package com.knockk.api.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -62,6 +63,11 @@ public class ResidentControllerTests {
         // Mock id
         private UUID mockResidentId;
         private UUID mockFriendId;
+        private UUID invitorId;
+        private UUID inviteeId;
+
+        private FriendshipModel friendRequest;
+        private FriendshipModel friendshipResponse;
 
         // Bad mock ids
         private String invalidResidentId;
@@ -88,6 +94,11 @@ public class ResidentControllerTests {
                 mockFriendId = UUID.randomUUID();
                 invalidResidentId = "invalidUUID";
                 invalidFriendId = "invalidUUID";
+                inviteeId = UUID.randomUUID();
+                invitorId = UUID.randomUUID();
+
+                friendRequest = new FriendshipModel(invitorId, inviteeId, false);
+                friendshipResponse = new FriendshipModel(invitorId, inviteeId, false);
 
                 // Unit information
                 mockFloor = 2;
@@ -103,6 +114,28 @@ public class ResidentControllerTests {
                                 "johninstagram", "johnsnapchat", "johnx", "johnfacebook");
 
         }
+
+//         @Test
+//     public void testUpdateFriendship_Success() throws Exception {
+//         when(service.updateFriendship(invitorId, inviteeId, false)).thenReturn(friendshipResponse);
+
+//         ObjectMapper objectMapper = new ObjectMapper();
+//                 // Act: Perform POST request with valid JSON
+//                 String requestJson = objectMapper.writeValueAsString(friendRequest);
+//         mockMvc.perform(post("/friendship")
+//                 .content(requestJson))
+//             // Assert: Verify response
+//             .andExpect(status().isOk())
+//             .andExpect(jsonPath("$.message").value("Success"))
+//             .andExpect(jsonPath("$.status").value(200))
+//             .andExpect(jsonPath("$.data.invitorId").value(invitorId.toString()))
+//             .andExpect(jsonPath("$.data.inviteeId").value(inviteeId.toString()))
+//             .andExpect(jsonPath("$.data.accepted").value(false));
+
+//         // Verify service was called with correct arguments
+//         verify(service, times(1)).updateFriendship(invitorId, inviteeId, false);
+//         verifyNoMoreInteractions(service);
+//     }
 
         // // Test case for successfully creating friend
         // @Test

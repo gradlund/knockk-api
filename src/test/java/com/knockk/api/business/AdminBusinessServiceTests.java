@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 
 import com.knockk.api.data.Gender;
 import com.knockk.api.data.service.AdminDataService;
+import com.knockk.api.entity.AdminEntity;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.model.AdminModel;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.data.domain.PageRequest;
 
 class AdminBusinessServiceTests {
@@ -35,6 +37,8 @@ class AdminBusinessServiceTests {
     private AdminDataService dataService;
 
     private AdminBusinessService adminBusinessService;
+
+    private BCryptPasswordEncoder passwordEncoder;
 
     // Global variables for reuse across tests
     private UUID adminId;
@@ -48,6 +52,7 @@ class AdminBusinessServiceTests {
     private AdminResidentEntity residentEntity2;
     private List<AdminResidentEntity> residentEntities;
     private Pageable pageable;
+    private AdminEntity adminEntity;
 
     @BeforeEach
     void setUp() {
@@ -55,7 +60,7 @@ class AdminBusinessServiceTests {
         MockitoAnnotations.openMocks(this);
 
         // Inject mock into service
-        adminBusinessService = new AdminBusinessService(dataService);
+        adminBusinessService = new AdminBusinessService(dataService, passwordEncoder);
 
         // Initialize global variables with fresh values before each test
 
@@ -79,6 +84,7 @@ class AdminBusinessServiceTests {
         residentEntities = List.of(residentEntity, residentEntity2);
 
         pageable = PageRequest.of(0, 10, Sort.by("lastName").ascending());
+        adminEntity = new AdminEntity(adminId, null, null);
     }
 
     // Test successful resident activation
@@ -497,9 +503,9 @@ class AdminBusinessServiceTests {
         UUID expectedUuid = UUID.randomUUID();
 
         // Mock the AdminDataService to return the expected UUID when called with the
-        // admin's username and password.
-        when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
-                .thenReturn(expectedUuid);
+        // admin's username.
+        when(dataService.findAdminByUsername(adminModel.getUsername()))
+                .thenReturn(adminEntity);
 
         // Call the login method on the business service and get the actual result.
         UUID actualUuid = adminBusinessService.login(adminModel);
@@ -509,8 +515,7 @@ class AdminBusinessServiceTests {
         assertEquals(expectedUuid, actualUuid);
 
         // Verify that the service method was called with the correct parameters
-        verify(dataService, times(1)).findAdminByUsernameAndPassword(adminModel.getUsername(),
-                adminModel.getPassword());
+        verify(dataService, times(1)).findAdminByUsername(adminModel.getUsername());
     }
 
     // Test for invalid credentials (throws CredentialException)
@@ -521,7 +526,7 @@ class AdminBusinessServiceTests {
 
         // Mock the AdminDataService to throw a CredentialException when called with
         // invalid credentials.
-        when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
+        when(dataService.findAdminByUsername(adminModel.getUsername()))
                 .thenThrow(new CredentialException("Invalid credentials"));
 
         // Call the login method and assert that the CredentialException is thrown.
@@ -533,8 +538,7 @@ class AdminBusinessServiceTests {
         assertEquals("Invalid credentials", thrown.getMessage());
 
         // Verify that the service method was called with the correct parameters
-        verify(dataService, times(1)).findAdminByUsernameAndPassword(adminModel.getUsername(),
-                adminModel.getPassword());
+        verify(dataService, times(1)).findAdminByUsername(adminModel.getUsername());
     }
 
     // Test for unexpected exceptions
@@ -545,7 +549,7 @@ class AdminBusinessServiceTests {
         AdminModel adminModel = new AdminModel("adminUser", "adminPassword");
 
         // Mock the AdminDataService to throw a RuntimeException for any reason.
-        when(dataService.findAdminByUsernameAndPassword(adminModel.getUsername(), adminModel.getPassword()))
+        when(dataService.findAdminByUsername(adminModel.getUsername()))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
         // Call the login method and assert that the RuntimeException is thrown.
@@ -557,8 +561,7 @@ class AdminBusinessServiceTests {
         assertEquals("Unexpected error", thrown.getMessage());
 
         // Verify that the service method was called with the correct parameters
-        verify(dataService, times(1)).findAdminByUsernameAndPassword(adminModel.getUsername(),
-                adminModel.getPassword());
+        verify(dataService, times(1)).findAdminByUsername(adminModel.getUsername());
     }
 
 }

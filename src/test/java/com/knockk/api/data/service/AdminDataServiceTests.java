@@ -11,6 +11,7 @@ import com.knockk.api.data.repository.AdminRepository;
 import com.knockk.api.data.repository.BuildingRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UserRepository;
+import com.knockk.api.entity.AdminEntity;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
 
@@ -223,18 +224,15 @@ class AdminDataServiceTests {
         when(adminRepository.findByUsernameAndPassword(username, password))
                 .thenReturn(Optional.of(expectedUuid));
 
-        // Call the service method with valid credentials and capture the returned UUID.
-        UUID actualUuid = adminDataService.findAdminByUsernameAndPassword(username, password);
+        // Call the service method with valid credentials and capture the returned admin entity.
+        AdminEntity adminEntity = adminDataService.findAdminByUsername(username);
 
         // Assert that the returned UUID is not null (i.e., login was successful).
-        assertNotNull(actualUuid);
-
-        // Assert that the returned UUID matches the expected UUID.
-        assertEquals(expectedUuid, actualUuid);
+        assertNotNull(adminEntity);
 
         // Verify that the repository method was called exactly once with the correct
         // parameters.
-        verify(adminRepository, times(1)).findByUsernameAndPassword(username, password);
+        verify(adminRepository, times(1)).findByUsername(username);
     }
 
     // Test case for invalid credentials (should throw CredentialException).
@@ -253,7 +251,7 @@ class AdminDataServiceTests {
         // Assert that the service method throws a CredentialException with the expected
         // message.
         CredentialException thrown = assertThrows(CredentialException.class, () -> {
-            adminDataService.findAdminByUsernameAndPassword(username, password);
+            adminDataService.findAdminByUsername(username);
         });
 
         // Assert that the exception message matches the expected "Invalid credentials."
@@ -280,7 +278,7 @@ class AdminDataServiceTests {
 
         // Assert that the service method throws the expected RuntimeException.
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> {
-            adminDataService.findAdminByUsernameAndPassword(username, password);
+            adminDataService.findAdminByUsername(username);
         });
 
         // Assert that the exception message matches the expected "Database error"

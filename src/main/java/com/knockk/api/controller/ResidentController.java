@@ -1,14 +1,9 @@
 package com.knockk.api.controller;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
-import java.util.Map;
-import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knockk.api.business.ResidentBusinessService;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
@@ -408,6 +402,9 @@ public class ResidentController {
 			// If the request does not contain the valid model, throw an exception
 			if (errors.hasErrors())
 				throw new IllegalArgumentException("Bad request");
+
+			System.out.println("hi");
+			System.out.println(credentials.getEmail());
 
 			// Otherwise, log the user in using the credentials
 			LoginModel user = service.login(credentials);

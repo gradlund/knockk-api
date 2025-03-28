@@ -6,6 +6,7 @@ package com.knockk.api.data.repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Admin;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -27,4 +28,7 @@ public interface AdminRepository extends CrudRepository<AdminEntity, UUID> {
 	 */
 	@Query(value = "SELECT admin_id from \"Admin\" where username = :username  AND password = :password")
 	public Optional<UUID> findByUsernameAndPassword(String username, String password);
+
+	@Query(value = "SELECT * from \"Admin\" where username = :username")
+	public Optional<AdminEntity> findByUsername(String username);
 }

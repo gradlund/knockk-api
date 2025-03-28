@@ -16,11 +16,13 @@ import javax.security.auth.login.CredentialException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.knockk.api.data.repository.UserRepository;
 import com.knockk.api.data.service.ResidentDataService;
 import com.knockk.api.entity.FriendshipEntity;
 import com.knockk.api.entity.UnitEntity;
+import com.knockk.api.entity.UserEntity;
 import com.knockk.api.model.FriendshipModel;
 import com.knockk.api.model.LoginModel;
 import com.knockk.api.model.NeighborRoomModel;
@@ -42,9 +44,12 @@ public class ResidentBusinessServiceTests {
 
     private ResidentBusinessService residentBusinessService;
 
+    private BCryptPasswordEncoder passwordEncoder;
+
     // Create mock data
     private String validEmail = "testuser@example.com";
     private String validPassword = "password123";
+    private UserEntity userEntity;
     private UUID validUUID = UUID.randomUUID();
     private String invalidEmail = "invaliduser@example.com";
     private String invalidPassword = "wrongpassword";
@@ -66,7 +71,11 @@ public class ResidentBusinessServiceTests {
         // Initialize mocks before each test method
         MockitoAnnotations.openMocks(this);
         // Inject mock into the service
-        residentBusinessService = new ResidentBusinessService(dataService);
+        residentBusinessService = new ResidentBusinessService(dataService,
+        passwordEncoder
+        );
+
+        userEntity = new UserEntity(residentId, validEmail, validPassword);
 
         // Intilize data before each test that might change in the test
         invitorId = UUID.randomUUID();
@@ -235,7 +244,7 @@ public class ResidentBusinessServiceTests {
         UserModel validUser = new UserModel(validEmail, validPassword);
 
         // Mock the ResidentDataService to return the expect resident and verification
-        when(dataService.findResidentByEmailAndPassword(validEmail, validPassword)).thenReturn(validUUID);
+        when(dataService.findResidentByEmailAndPassword(validEmail, validPassword)).thenReturn(userEntity);
         when(dataService.checkVerified(validUUID)).thenReturn(true);
 
         // Call the login method

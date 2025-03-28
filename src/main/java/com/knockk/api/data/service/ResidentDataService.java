@@ -70,7 +70,7 @@ public class ResidentDataService {
 
 	public UUID createAccount(UserEntity user) throws Exception {
 		// Check if email exists, if it does, throw error
-		Optional<UUID> userId = userRepository.findByEmail(user.getEmail());
+		Optional<UserEntity> userId = userRepository.findByEmail(user.getEmail());
 		if (userId.isPresent()) {
 			throw new Exception("User already exists with that email.");
 		}
@@ -348,15 +348,16 @@ public class ResidentDataService {
 	 * @return the residents id if the credentials are valid
 	 * @throws CredentialException if the credentials are not valid
 	 */
-	public UUID findResidentByEmailAndPassword(String email, String password) throws CredentialException {
+	public UserEntity findResidentByEmailAndPassword(String email, String password) throws CredentialException {
 
-		Optional<UUID> id = userRepository.findByEmailAndPassword(email, password);
+		Optional<UserEntity> user = userRepository.findByEmail(email);
 
-		// Check for optional
-		if (!id.isPresent())
+		// Check for optional, means email was incorrect
+		if (!user.isPresent()){
 			throw new CredentialException("Invalid credentials.");
-
-		return id.get();
+		}
+		return user.get();
+		
 	}
 
 	/**
@@ -496,9 +497,9 @@ public class ResidentDataService {
 	 * 
 	 * @param id : id of the resident
 	 * @return a resident entity
-	 * @throws Exception
+	 * @throws NoSuchElementException
 	 */
-	public ResidentEntity getResidentEntity(UUID id) {
+	public ResidentEntity getResidentEntity(UUID id) throws NoSuchElementException {
 		// TODO: switch to using repository or using prepared statement
 		String sql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + id + "'";
 		List<ResidentEntity> resident = jdbcTemplateObject.query(sql, new ResidentMapper());

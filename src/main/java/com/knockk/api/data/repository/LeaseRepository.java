@@ -1,6 +1,5 @@
 package com.knockk.api.data.repository;
 
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,12 +24,12 @@ public interface LeaseRepository extends CrudRepository<LeaseEntity, UUID> {
     Optional<UUID> findUnitByLeaseId(UUID leaseId);
 
     // Not used
-    /**
-     * Retrieves the lease id from the unit table
-     * 
-     * @param unitID : id of the unit
-     * @return the lease id if it exists
-     */
+//     /**
+//      * Retrieves the lease id from the unit table
+//      * 
+//      * @param unitID : id of the unit
+//      * @return the lease id if it exists
+//      */
     // @Query(value = "SELECT lease_id FROM \"Lease\" where fk_unit_id = :unitId")
     // public Optional<UUID> findLeaseIdByUnitId(UUID unitID);
 

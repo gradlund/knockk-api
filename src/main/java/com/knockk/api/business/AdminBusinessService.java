@@ -10,14 +10,17 @@ import java.util.UUID;
 import javax.security.auth.login.CredentialException;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.AdminDataService;
+import com.knockk.api.entity.AdminEntity;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
 import com.knockk.api.model.AdminModel;
 import com.knockk.api.model.AdminResidentModel;
 import com.knockk.api.model.BuildingModel;
+import com.knockk.api.model.LoginModel;
 
 /**
  * This class implements the business service for admin
@@ -29,13 +32,16 @@ public class AdminBusinessService {
 
 	AdminDataService dataService;
 
+	public BCryptPasswordEncoder passwordEncoder;
+
 	/**
 	 * Constructor for dependency injection
 	 * 
 	 * @param dataService admin data service being used
 	 */
-	public AdminBusinessService(AdminDataService dataService) {
+	public AdminBusinessService(AdminDataService dataService, BCryptPasswordEncoder passwordEncoder) {
 		this.dataService = dataService;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	/**
@@ -158,13 +164,25 @@ public class AdminBusinessService {
 		String username = credential.getUsername();
 		String password = credential.getPassword();
 
-		// Use the dataservice to return the id of the admin
-		return dataService.findAdminByUsernameAndPassword(username, password);
+		// Use the dataservice to retrieve the admin
+		AdminEntity admin = dataService.findAdminByUsername(username);
+
+		// Check if the passwords match
+		if (passwordEncoder.matches(password, admin.getPassword())) {
+			return admin.getAdminId();
+		} else {
+			throw new CredentialException("Invalid credentials.");
+		}
+
 	}
 
-	// TODO : delete
-	public int getNumberOfResidents(UUID buildingId, Boolean verified) throws Exception {
-
+	/**
+	 * Returns the number of residents.
+	 * @param buildingId : id of the building
+	 * @param verified : if the residents are verified
+	 * @return number of residents
+	 */
+	public int getNumberOfResidents(UUID buildingId, Boolean verified) {
 		return dataService.getNumberOfResidents(buildingId, verified);
 	}
 }

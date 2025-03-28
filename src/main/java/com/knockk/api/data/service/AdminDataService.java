@@ -17,6 +17,7 @@ import com.knockk.api.data.repository.AdminRepository;
 import com.knockk.api.data.repository.BuildingRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UserRepository;
+import com.knockk.api.entity.AdminEntity;
 import com.knockk.api.entity.AdminResidentEntity;
 import com.knockk.api.entity.BuildingEntity;
 
@@ -105,14 +106,25 @@ public class AdminDataService {
 	 * @return the id of the admin if the credentials are valid
 	 * @throws CredentialException if the credentials are not valid
 	 */
-	public UUID findAdminByUsernameAndPassword(String username, String password) throws CredentialException {
+	// public UUID findAdminByUsernameAndPassword(String username, String password) throws CredentialException {
 
-		Optional<UUID> id = adminRepository.findByUsernameAndPassword(username, password);
+	// 	Optional<AdminEntity> id = adminRepository.findByUsernameAndPassword(username, password);
 
-		if (!id.isPresent())
-			throw new CredentialException("Invalid credentials.");
+	// 	if (!id.isPresent())
+	// 		throw new CredentialException("Invalid credentials.");
 
-		return id.get();
+	// 	return id.get();
+	// }
+
+	public AdminEntity findAdminByUsername(String username) throws CredentialException {
+
+		Optional<AdminEntity> admin = adminRepository.findByUsername(username);
+
+		if (!admin.isPresent()){
+			throw new CredentialException("Invalid username."); //Add catch in controller for this
+		}
+
+		return admin.get();
 	}
 
 	/**
@@ -243,14 +255,16 @@ public class AdminDataService {
 		return residents;
 	}
 
-	// TODO: delte method
-	public int getNumberOfResidents(UUID buildingId, boolean verified) throws Exception {
+	/**
+	 * Does not throw an exception... okay if no residents are found because this method is used to check
+	 * the number of unverified residents
+	 * @param buildingId : id of the building
+	 * @param verified : if the residents are verified
+	 * @return the number of residents
+	 * @throws Exception
+	 */
+	public int getNumberOfResidents(UUID buildingId, boolean verified) {
 		int numOfResidents = residentRepository.retrieveNumberOfResidents(buildingId, verified);
-
-		if (numOfResidents == 0) {
-			throw new Exception("Not found. Problem retrieving pages.");
-		}
-
 		return numOfResidents;
 	}
 }

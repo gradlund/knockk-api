@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.ResidentDataService;
@@ -36,13 +38,19 @@ import com.knockk.api.data.Gender;
 public class ResidentBusinessService {
 	ResidentDataService dataService;
 
+	//@Autowired
+	private BCryptPasswordEncoder passwordEncoder;
+
 	/**
 	 * Constructor used for dependency injection
 	 * 
 	 * @param dataService data service used in for residents
 	 */
-	public ResidentBusinessService(ResidentDataService dataService) {
+	public ResidentBusinessService(ResidentDataService dataService, 
+	BCryptPasswordEncoder passwordEncoder
+	) {
 		this.dataService = dataService;
+		this.passwordEncoder = passwordEncoder;
 	}
 
 	public List<String> getBuildings(String street) throws Exception {
@@ -58,7 +66,8 @@ public class ResidentBusinessService {
 	public UUID createAccount(UserModel credentials) throws Exception {
 		// Check if the email exists throw an error, otherwise create the account
 		// Convert to entity
-		return dataService.createAccount(new UserEntity(null, credentials.getEmail(), credentials.getPassword()));
+		return dataService.createAccount(new UserEntity(null, credentials.getEmail(),
+		passwordEncoder.encode(credentials.getPassword())));
 	}
 
 	/**
@@ -149,12 +158,18 @@ public class ResidentBusinessService {
 		String password = credential.getPassword();
 
 		// Find id
-		UUID id = dataService.findResidentByEmailAndPassword(email, password);
-
+		UserEntity user = dataService.findResidentByEmailAndPassword(email, password);
+		
+		// If the password matches the encoded one in the database, check if the user is verified
+		if(passwordEncoder.matches(password, user.getPassword())){
 		// Find if verified
-		Boolean verified = dataService.checkVerified(id);
+		Boolean verified = dataService.checkVerified(user.getResidentId());
 
-		return new LoginModel(id, verified);
+		return new LoginModel(user.getResidentId(), verified);
+		}
+		else{
+			throw new CredentialException("Invalid credentials.");
+		}
 	}
 
 	// TODO: remove is connected (possibly)
