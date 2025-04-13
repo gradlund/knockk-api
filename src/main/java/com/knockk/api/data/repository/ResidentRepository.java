@@ -167,7 +167,7 @@ public interface ResidentRepository extends CrudRepository<ResidentEntity, UUID>
 	@Query(value = "SELECT \"Resident\".resident_id from \"Unit\"" +
 			"  INNER JOIN \"Lease\" ON \"Lease\".fk_unit_id = \"Unit\".unit_id" +
 			"  INNER JOIN \"Resident\" ON \"Resident\".fk_lease_id = \"Lease\".lease_id" +
-			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room")
+			"  where \"Unit\".floor = :floor AND \"Unit\".room = :room AND verified = true")
 	List<UUID> findResidentsByUnit(int floor, int room);
 
 	// @Transactional

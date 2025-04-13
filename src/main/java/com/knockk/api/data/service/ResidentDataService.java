@@ -106,7 +106,7 @@ public class ResidentDataService {
 
 		// +/- 1 was already added, meaning should not be equal to
 		// Make sure top and bottom floors are valid
-		if (floor < topFloor && floor > bottomFloor) {
+		if (floor <= topFloor && floor >= bottomFloor) {
 			return true;
 		}
 		return false;
@@ -142,19 +142,23 @@ public class ResidentDataService {
 		ArrayList<Integer> noRoomsRight = building.getNoRoomsRight();
 		ArrayList<Integer> noRoomsLeft = building.getNoRoomsLeft();
 
+		if(noRoomsRight != null){
 		// Make sure room is not a room that has no neighbors right
 		for (Integer roomToCheck : noRoomsRight) {
 			if (roomToCheck == room) {
 				return false;
 			}
 		}
+	}
 
+	if(noRoomsLeft != null){
 		// Make sure room is not a room that has no neighbors left
 		for (Integer roomToCheck : noRoomsLeft) {
 			if (roomToCheck == room) {
 				return false;
 			}
 		}
+	}
 
 		return true;
 	}
