@@ -7,7 +7,7 @@ import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 
-import com.knockk.api.entity.FriendshipEntity;
+import com.knockk.api.util.entity.FriendshipEntity;
 
 /**
  * Interface for the friendship repository

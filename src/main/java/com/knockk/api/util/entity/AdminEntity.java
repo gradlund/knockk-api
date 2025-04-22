@@ -1,7 +1,7 @@
 /**
  * Contains entity classes
  */
-package com.knockk.api.entity;
+package com.knockk.api.util.entity;
 
 import java.util.UUID;
 

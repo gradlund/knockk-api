@@ -1,4 +1,4 @@
-package com.knockk.api.data;
+package com.knockk.api.util;
 
 /**
  * Enumeration for Gender

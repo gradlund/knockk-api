@@ -8,26 +8,24 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.ResidentDataService;
-import com.knockk.api.entity.BuildingEntity;
-import com.knockk.api.entity.FriendshipEntity;
-import com.knockk.api.entity.ResidentEntity;
-import com.knockk.api.entity.UnitEntity;
-import com.knockk.api.entity.UserEntity;
-import com.knockk.api.model.FriendshipModel;
-import com.knockk.api.model.LoginModel;
-import com.knockk.api.model.NeighborRoomModel;
-import com.knockk.api.model.OptionalResidentModel;
-import com.knockk.api.model.RegisterModel;
-import com.knockk.api.model.ResidentModel;
-import com.knockk.api.model.UnitResidentModel;
-import com.knockk.api.model.UserModel;
-
-import com.knockk.api.data.Gender;
+import com.knockk.api.util.Gender;
+import com.knockk.api.util.entity.BuildingEntity;
+import com.knockk.api.util.entity.FriendshipEntity;
+import com.knockk.api.util.entity.ResidentEntity;
+import com.knockk.api.util.entity.UnitEntity;
+import com.knockk.api.util.entity.UserEntity;
+import com.knockk.api.util.model.FriendshipModel;
+import com.knockk.api.util.model.LoginModel;
+import com.knockk.api.util.model.NeighborRoomModel;
+import com.knockk.api.util.model.OptionalResidentModel;
+import com.knockk.api.util.model.RegisterModel;
+import com.knockk.api.util.model.ResidentModel;
+import com.knockk.api.util.model.UnitResidentModel;
+import com.knockk.api.util.model.UserModel;
 
 /**
  * This class implements the business service for residents
@@ -38,7 +36,7 @@ import com.knockk.api.data.Gender;
 public class ResidentBusinessService {
 	ResidentDataService dataService;
 
-	//@Autowired
+	// @Autowired
 	private BCryptPasswordEncoder passwordEncoder;
 
 	/**
@@ -46,28 +44,40 @@ public class ResidentBusinessService {
 	 * 
 	 * @param dataService data service used in for residents
 	 */
-	public ResidentBusinessService(ResidentDataService dataService, 
-	BCryptPasswordEncoder passwordEncoder
-	) {
+	public ResidentBusinessService(ResidentDataService dataService,
+			BCryptPasswordEncoder passwordEncoder) {
 		this.dataService = dataService;
 		this.passwordEncoder = passwordEncoder;
 	}
 
+	/**
+	 * Retrieves a list of building names based on their address
+	 * 
+	 * @param street : street address of the building
+	 * @return a list of building names
+	 * @throws Exception thrown if no buildings are found
+	 */
 	public List<String> getBuildings(String street) throws Exception {
 		List<BuildingEntity> buildingEntities = dataService.findBuilding(street);
 		List<String> buildings = new ArrayList<String>();
 		for (BuildingEntity building : buildingEntities) {
-			System.out.println(building.getName());
 			buildings.add(building.getName());
 		}
 		return buildings;
 	}
 
+	/**
+	 * Creates an account with the credentials given
+	 * 
+	 * @param credentials : email and password of the resident
+	 * @return the id of the resident registered
+	 * @throws Exception thrown if there is a problem creating the account
+	 */
 	public UUID createAccount(UserModel credentials) throws Exception {
 		// Check if the email exists throw an error, otherwise create the account
 		// Convert to entity
 		return dataService.createAccount(new UserEntity(null, credentials.getEmail(),
-		passwordEncoder.encode(credentials.getPassword())));
+				passwordEncoder.encode(credentials.getPassword())));
 	}
 
 	/**
@@ -159,15 +169,15 @@ public class ResidentBusinessService {
 
 		// Find id
 		UserEntity user = dataService.findResidentByEmailAndPassword(email, password);
-		
-		// If the password matches the encoded one in the database, check if the user is verified
-		if(passwordEncoder.matches(password, user.getPassword())){
-		// Find if verified
-		Boolean verified = dataService.checkVerified(user.getResidentId());
 
-		return new LoginModel(user.getResidentId(), verified);
-		}
-		else{
+		// If the password matches the encoded one in the database, check if the user is
+		// verified
+		if (passwordEncoder.matches(password, user.getPassword())) {
+			// Find if verified
+			Boolean verified = dataService.checkVerified(user.getResidentId());
+
+			return new LoginModel(user.getResidentId(), verified);
+		} else {
 			throw new CredentialException("Invalid credentials.");
 		}
 	}
@@ -386,21 +396,23 @@ public class ResidentBusinessService {
 		return dataService.createResident(residentEntity);
 	}
 
+	/**
+	 * Retrieves the id of the lease given the building address, name, floor, room,
+	 * start date, and end date.
+	 * 
+	 * @param address   : street address of the building on the lease
+	 * @param name      : name of the building on the lease
+	 * @param floor     : floor the unit of the lease is on
+	 * @param room      : room number the unit of the lease is in
+	 * @param startDate : start date of the lease
+	 * @param endDate   : end date of the lease
+	 * @return the id of the lease
+	 * @throws Exception if the lease could not be found
+	 */
 	public UUID getLease(String address, String name, int floor, int room, String startDate, String endDate)
 			throws Exception {
-		// Get building id from name of the Building table // name isn't unique, so I
-		// need address too
-		// With throw an error if it doesn't exist
-		// UUID buildingId = dataService.getBuildingIdByAddressAndName(address, name);
-
-		// Using that as a foregin key, get the unit id from the floor and room number
-		// UUID unitId = dataService.getUnitId(buildingId, floor, room);
-
-		// Using that as a foregin key in the Lease table, use the start date and end
-		// date to get the lease id
+		// Retrieve the lease given lease details
 		return dataService.getLeaseId(address, name, floor, room, startDate, endDate);
 
 	}
-
-	// TODO: get unit - show an error if no units are registere
 }

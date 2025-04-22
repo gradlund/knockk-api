@@ -17,15 +17,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.knockk.api.business.ResidentBusinessService;
-import com.knockk.api.model.FriendshipModel;
-import com.knockk.api.model.LoginModel;
-import com.knockk.api.model.NeighborRoomModel;
-import com.knockk.api.model.OptionalResidentModel;
-import com.knockk.api.model.RegisterModel;
-import com.knockk.api.model.ResidentModel;
-import com.knockk.api.model.ResponseModel;
-import com.knockk.api.model.UnitResidentModel;
-import com.knockk.api.model.UserModel;
+import com.knockk.api.util.model.FriendshipModel;
+import com.knockk.api.util.model.LoginModel;
+import com.knockk.api.util.model.NeighborRoomModel;
+import com.knockk.api.util.model.OptionalResidentModel;
+import com.knockk.api.util.model.RegisterModel;
+import com.knockk.api.util.model.ResidentModel;
+import com.knockk.api.util.model.ResponseModel;
+import com.knockk.api.util.model.UnitResidentModel;
+import com.knockk.api.util.model.UserModel;
 
 import jakarta.validation.Valid;
 
@@ -41,8 +41,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/residents")
 public class ResidentController {
-
-	private @Autowired ResidentBusinessService service;
+	@Autowired
+	private ResidentBusinessService service;
 
 	/**
 	 * Creates a friendship between two residents, by resident id and neighbor's
@@ -55,11 +55,12 @@ public class ResidentController {
 	 * @return a ResponseEntity with a status code, message, and data
 	 */
 	@PostMapping("/friendship")
-	public ResponseEntity<?> updateFriendship(@RequestBody FriendshipModel friendshipRequest, Errors errors) {
+	public ResponseEntity<?> updateFriendship(@Valid @RequestBody FriendshipModel friendshipRequest, Errors errors) {
 		try {
 			// If the request does not contain the valid model, throw an exception
-			if (errors.hasErrors())
-				throw new IllegalArgumentException("Bad request");
+			if (errors.hasErrors()) {
+				throw new Exception("Bad Request");
+			}
 
 			// Update friendship (create one) using the invitor's id, invitee's id, and if
 			// accepted (which should be false if creating one)
@@ -82,13 +83,23 @@ public class ResidentController {
 		}
 	}
 
+	/**
+	 * Creates a user account.
+	 * 
+	 * Used to register the email and password.
+	 * 
+	 * @param credentials : of the resident
+	 * @param errors      : if there are validation errors
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@PostMapping("/create-account")
 	@ResponseBody
-	public ResponseEntity<?> createAccount(@Valid @RequestBody UserModel credentials, Errors errors) {
+	public ResponseEntity<?> createAccount(@RequestBody UserModel credentials, Errors errors) throws Exception {
 		try {
+			// TODO: errors.hasErrors throws it's own error
 			// If the request does not contain the valid model, throw an exception
 			if (errors.hasErrors())
-				throw new IllegalArgumentException("Bad request");
+				throw new Exception("Bad Request");
 
 			// Otherwise, register the account. If the email already exists, it will throw
 			// an error
@@ -107,6 +118,23 @@ public class ResidentController {
 		}
 	}
 
+	/**
+	 * Shows the details of a lease, by building, floor, room, start date, and end
+	 * date.
+	 * 
+	 * Used when a resident is registering to tie them to a lease.
+	 * 
+	 * Uses query params because we are filtering the database to see if this lease
+	 * exists.
+	 * 
+	 * @param address   : the address the resident lives in
+	 * @param name      : the name of the building the resident lives in
+	 * @param floor     : the floor the resident lives on
+	 * @param room      : the room the resident lives in
+	 * @param startDate : when the resident's lease starts
+	 * @param endDate   : when the resident's lease ends
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@GetMapping("/lease")
 	@ResponseBody
 	public ResponseEntity<?> getLease(@RequestParam(name = "address") String address,
@@ -211,10 +239,20 @@ public class ResidentController {
 		}
 	}
 
+	/**
+	 * Shows building details, by building name.
+	 * 
+	 * Used upon resident registering. This ensures that they live in a building
+	 * that is in the database.
+	 * 
+	 * @param street : street of the building
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@GetMapping("/building/{street}")
 	public ResponseEntity<?> getBuilding(@PathVariable("street") String street) {
 		try {
 
+			// Retrieve a list of building names
 			List<String> buildings = service.getBuildings(street);
 
 			// ResponseModel with a list of neighboring residents of the unit, message, and
@@ -403,9 +441,6 @@ public class ResidentController {
 			if (errors.hasErrors())
 				throw new IllegalArgumentException("Bad request");
 
-			System.out.println("hi");
-			System.out.println(credentials.getEmail());
-
 			// Otherwise, log the user in using the credentials
 			LoginModel user = service.login(credentials);
 
@@ -422,6 +457,17 @@ public class ResidentController {
 		}
 	}
 
+	/**
+	 * Log the resident in.
+	 * 
+	 * Used when the resident logs in to the app. Verifies the credentials in the
+	 * database. Important to note that the password will be hashed.
+	 * 
+	 * @param registerInfo : information about the resident being registered
+	 * @param errors       : data-binding and validation errors relating to the
+	 *                     request body
+	 * @return a ResponseEntity with a status code, message, and data
+	 */
 	@PostMapping("/")
 	@ResponseBody // Could use ResidentModel
 	public ResponseEntity<?> register(@Valid @RequestBody RegisterModel registerInfo, Errors errors) {
@@ -434,7 +480,6 @@ public class ResidentController {
 
 			System.out.println(registerInfo.getLeaseId());
 			Boolean registered = service.register(registerInfo);
-			// Boolean registered = true;
 
 			// ResponseModel with boolean, message, and status code
 			ResponseModel<Boolean> response = new ResponseModel<Boolean>(registered,
@@ -462,7 +507,6 @@ public class ResidentController {
 		data.put("Error", e.getMessage());
 
 		ResponseModel<HashMap<String, String>> response = new ResponseModel<HashMap<String, String>>(data);
-		// TODO: ADD MORE CONTAINS FOR OTHER ERROR MESSAGES
 
 		// Bad request - request body is invalid
 		if (e.getMessage().toLowerCase().contains("bad request")) {
@@ -493,6 +537,13 @@ public class ResidentController {
 			response.setStatus(404);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
+		// Not Found
+		else if (e.getMessage().toLowerCase().contains("invalid address")) {
+			System.out.println("Not found");
+			response.setMessage("Not Found");
+			response.setStatus(404);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
+		}
 		// Already exists
 		else if (e.getMessage().toLowerCase().contains("already exists")) {
 			response.setMessage("Already Exists");
@@ -513,7 +564,7 @@ public class ResidentController {
 		}
 		// Problem updating or saving
 		else if (e.getMessage().toLowerCase().contains("could not update")
-				|| e.getMessage().toLowerCase().contains("could not save")) { // thrown in data service for updating
+				|| e.getMessage().toLowerCase().contains("could not save")) {
 			// resident
 			response.setMessage("Problem updating or saving.");
 			response.setStatus(500); // TODO - should be a diffenent stat

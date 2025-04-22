@@ -1,4 +1,4 @@
-package com.knockk.api.entity;
+package com.knockk.api.util.entity;
 
 import java.util.ArrayList;
 import java.util.UUID;

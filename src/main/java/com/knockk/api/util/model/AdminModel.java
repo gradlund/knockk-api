@@ -1,7 +1,7 @@
 /**
  * Contains model classes
  */
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 import jakarta.validation.constraints.NotNull;
 

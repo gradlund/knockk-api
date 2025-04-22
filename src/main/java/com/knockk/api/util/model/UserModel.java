@@ -1,4 +1,4 @@
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -11,7 +11,7 @@ public class UserModel {
 	private String email;
 	@NotNull
 	private String password;
-	
+
 	public UserModel(String email, String password) {
 		this.email = email;
 		this.password = password;

@@ -18,11 +18,11 @@ import com.knockk.api.data.repository.LeaseRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
-import com.knockk.api.entity.BuildingEntity;
-import com.knockk.api.entity.FriendshipEntity;
-import com.knockk.api.entity.ResidentEntity;
-import com.knockk.api.entity.UnitEntity;
-import com.knockk.api.entity.UserEntity;
+import com.knockk.api.util.entity.BuildingEntity;
+import com.knockk.api.util.entity.FriendshipEntity;
+import com.knockk.api.util.entity.ResidentEntity;
+import com.knockk.api.util.entity.UnitEntity;
+import com.knockk.api.util.entity.UserEntity;
 import com.knockk.api.data.mapper.ResidentMapper;
 
 // Exception reference: //https://docs.oracle.com/cd/E37115_01/apirefs.1112/e28160/org/identityconnectors/framework/common/exceptions/InvalidCredentialException.html
@@ -68,6 +68,14 @@ public class ResidentDataService {
 		this.jdbcTemplateObject = jdbcTemplateObject;
 	}
 
+	/**
+	 * Registers the user given their email and password
+	 * 
+	 * @param user : username and password of the user
+	 * @return an id of the user (if successfully registered)
+	 * @throws Exception thrown if there is a problem creating the account, or if
+	 *                   the email is already taken
+	 */
 	public UUID createAccount(UserEntity user) throws Exception {
 		// Check if email exists, if it does, throw error
 		Optional<UserEntity> userId = userRepository.findByEmail(user.getEmail());
@@ -142,23 +150,23 @@ public class ResidentDataService {
 		ArrayList<Integer> noRoomsRight = building.getNoRoomsRight();
 		ArrayList<Integer> noRoomsLeft = building.getNoRoomsLeft();
 
-		if(noRoomsRight != null){
-		// Make sure room is not a room that has no neighbors right
-		for (Integer roomToCheck : noRoomsRight) {
-			if (roomToCheck == room) {
-				return false;
+		if (noRoomsRight != null) {
+			// Make sure room is not a room that has no neighbors right
+			for (Integer roomToCheck : noRoomsRight) {
+				if (roomToCheck == room) {
+					return false;
+				}
 			}
 		}
-	}
 
-	if(noRoomsLeft != null){
-		// Make sure room is not a room that has no neighbors left
-		for (Integer roomToCheck : noRoomsLeft) {
-			if (roomToCheck == room) {
-				return false;
+		if (noRoomsLeft != null) {
+			// Make sure room is not a room that has no neighbors left
+			for (Integer roomToCheck : noRoomsLeft) {
+				if (roomToCheck == room) {
+					return false;
+				}
 			}
 		}
-	}
 
 		return true;
 	}
@@ -240,18 +248,29 @@ public class ResidentDataService {
 		return friendship.get().isAccepted();
 	}
 
+	/**
+	 * Registers a resident in the database with the id created upon registering the
+	 * email.
+	 * 
+	 * @param resident : information about the resident (not including username and
+	 *                 password)
+	 * @return a boolean if successful
+	 * @throws Exception thrown if there is an issue registering the unit
+	 */
 	public boolean createResident(ResidentEntity resident) throws Exception {
+		// TODO: validate input
 
+		// Register the resident
 		int rows = residentRepository.register(resident.getId(), resident.getFirstName(), resident.getLastName(),
 				resident.getAge(), resident.getHometown(), resident.getBiography(), resident.getProfilePhoto(),
 				resident.getBackgroundPhoto(), resident.getInstagram(), resident.getSnapchat(), resident.getX(),
 				resident.getFacebook(), resident.getGender(), resident.getLeaseId(), resident.isVerified());
-		// System.out.println(created);
 
+		// If wasn't successful, throw an error
 		if (rows != 1) {
 			throw new Exception("Could not save the resident.");
 		}
-		System.out.println(rows);
+
 		return true;
 	}
 
@@ -279,6 +298,16 @@ public class ResidentDataService {
 		}
 	}
 
+	/**
+	 * Retrieves a building by the street address
+	 * 
+	 * TODO: probably shouldn't throw an exception if it's empty, only if the
+	 * address is wrong
+	 * 
+	 * @param street : street address of the building
+	 * @return a list of building entities
+	 * @throws Exception thrown if the list is empty
+	 */
 	public List<BuildingEntity> findBuilding(String street) throws Exception {
 		List<BuildingEntity> buildings = buildingRepository.findByAddress(street);
 
@@ -357,11 +386,11 @@ public class ResidentDataService {
 		Optional<UserEntity> user = userRepository.findByEmail(email);
 
 		// Check for optional, means email was incorrect
-		if (!user.isPresent()){
+		if (!user.isPresent()) {
 			throw new CredentialException("Invalid credentials.");
 		}
 		return user.get();
-		
+
 	}
 
 	/**
@@ -392,12 +421,20 @@ public class ResidentDataService {
 		return unit.get();
 	}
 
+	/**
+	 * Retrieves a building id by the address and name of the building.
+	 * 
+	 * @param address : street address of the building
+	 * @param name    : name of the building
+	 * @return the id of the building
+	 * @throws Exception thrown if the building could not be found
+	 */
 	public UUID getBuildingIdByAddressAndName(String address, String name) throws Exception {
 
 		// Find the building id
 		Optional<UUID> buildingId = buildingRepository.findByAddressAndName(address, name);
 
-		// If the buidlingn exsits by address and name, return the id
+		// If the building exists by address and name, return the id
 		if (buildingId.isPresent()) {
 			return buildingId.get();
 		}
@@ -405,48 +442,35 @@ public class ResidentDataService {
 		throw new Exception("Building does not exist with given street and address.");
 	}
 
+	/**
+	 * Retrieves the id of a lease.
+	 * 
+	 * @param address      : building address of the lease
+	 * @param buildingName : building name on the lease
+	 * @param floor        : floor number on the lease
+	 * @param room         : room number on the lease
+	 * @param startDate    : start date of the lease
+	 * @param endDate      : end date of the lease
+	 * @return the id of the lease
+	 * @throws Exception thrown if the lease id can not be found
+	 */
 	public UUID getLeaseId(String address, String buildingName, int floor, int room, String startDate, String endDate)
 			throws Exception {
+		// System.out.println(address + buildingName + floor + room + startDate +
+		// endDate);
 
-		System.out.println(address + buildingName + floor + room + startDate + endDate);
 		// Find the lease id
 		Optional<UUID> leaseId = leaseRepository.findLeaseId(address, buildingName, floor, room, startDate, endDate);
 
-		// If the buidlingn exsits by address and name, return the id
+		// If the buidlingn exists by address and name, return the id
 		if (leaseId.isPresent()) {
-			System.out.println(leaseId.get());
+
 			return leaseId.get();
 		}
 		// Else throw exception
 		throw new Exception("Lease not found.");
 	}
 
-	// public UUID getUnitId(UUID buildingId, int floor, int room) throws Exception{
-	// // Find unit id
-	// Optional<UUID> unitId = unitRepository.findUnitId(buildingId, floor, room);
-
-	// // If the unit exists with that criteria, return the id
-	// if(unitId.isPresent()){
-	// return unitId.get();
-	// }
-	// // Else throw exception
-	// throw new Exception("Unit does not exist.");
-	// }
-
-	// private UUID getLeaseId(UUID unitId, Date startDate, Date endDate) throws
-	// Exception{
-	// // Find lease id
-	// Optional<UUID> leaseId = unitRepository.findUnitId(buildingId, floor, room);
-
-	// // If the unit exists with that criteria, return the id
-	// if(unitId.isPresent()){
-	// return unitId.get();
-	// }
-	// // Else throw exception
-	// throw new Exception("Lease does not exist.");
-	// }
-
-	// TODO: do I need to retrieve the whole residententity?
 	/**
 	 * Retrieves the name of the resident.
 	 * 
@@ -472,7 +496,6 @@ public class ResidentDataService {
 		}
 	}
 
-	// TODO: do I need to retrieve the whole residententity?
 	/**
 	 * Retrieves the profile photo of the resident
 	 * 

@@ -1,4 +1,4 @@
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 import java.util.UUID;
 

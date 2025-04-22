@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties.Build;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +24,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.knockk.api.business.AdminBusinessService;
-import com.knockk.api.model.AdminModel;
-import com.knockk.api.model.AdminResidentModel;
-import com.knockk.api.model.BuildingModel;
-import com.knockk.api.model.ResidentModel;
-import com.knockk.api.model.ResponseModel;
-import com.knockk.api.model.UserModel;
-
-import com.knockk.api.model.RequestWithId;
+import com.knockk.api.util.model.AdminModel;
+import com.knockk.api.util.model.AdminResidentModel;
+import com.knockk.api.util.model.BuildingModel;
+import com.knockk.api.util.model.RequestWithId;
+import com.knockk.api.util.model.ResponseModel;
 
 import jakarta.validation.Valid;
 
@@ -179,7 +174,8 @@ public class AdminController {
 			@RequestParam(defaultValue = "false") boolean areVerified) {
 		try {
 
-			// TODO: have my own custom try catch to throw error, otherwise server will
+			// TODO: have my own custom try catch to throw error, otherwise server will and
+			// doesn't throw an exception
 
 			// Retrieve the building's id from the path variable
 			UUID buildingId = UUID.fromString(id);
@@ -342,6 +338,12 @@ public class AdminController {
 			response.setMessage("Forbidden. Invalid credentials.");
 			response.setStatus(403);
 			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.BAD_REQUEST);
+		}
+		// Error deleting
+		else if (e.getMessage().toLowerCase().contains("error deleting")) {
+			response.setMessage("Not Found");
+			response.setStatus(404);
+			return new ResponseEntity<ResponseModel<HashMap<String, String>>>(response, HttpStatus.NOT_FOUND);
 		}
 		// Not Found
 		else if (e.getMessage().toLowerCase().contains("not found")) {

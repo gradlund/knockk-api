@@ -1,4 +1,4 @@
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 /*
  * Model used in a response when a user logs in to see what rooms they are neighboring with.

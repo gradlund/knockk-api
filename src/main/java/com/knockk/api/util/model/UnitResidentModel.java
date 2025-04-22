@@ -1,4 +1,4 @@
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 import java.util.UUID;
 
@@ -28,24 +28,31 @@ public class UnitResidentModel {
     public UUID getResidentId() {
         return residentId;
     }
+
     public void setResidentId(UUID residentId) {
         this.residentId = residentId;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getProfilePhoto() {
         return profilePhoto;
     }
+
     public void setProfilePhoto(String profilePhoto) {
         this.profilePhoto = profilePhoto;
     }
+
     public boolean isConnected() {
         return isConnected;
     }
+
     public void setConnected(boolean isConnected) {
         this.isConnected = isConnected;
     }

@@ -1,8 +1,11 @@
-package com.knockk.api.model;
+package com.knockk.api.util.model;
 
 import jakarta.validation.constraints.NotNull;
-// import java.util.UUID;
 
+/**
+ * Model for registering a resident. Extends the OptionalResidentModel which
+ * contains optional fields.
+ */
 public class RegisterModel extends OptionalResidentModel {
     @NotNull
     private String id;

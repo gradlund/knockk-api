@@ -1,11 +1,11 @@
-package com.knockk.api.entity;
+package com.knockk.api.util.entity;
 
 import java.sql.Date;
 import java.util.UUID;
 
 import org.springframework.data.relational.core.mapping.Column;
 
-import com.knockk.api.data.Gender;
+import com.knockk.api.util.Gender;
 
 /**
  * NOTE: this is generally not practice. It is better to replicate the tables of

@@ -14,13 +14,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.knockk.api.data.service.AdminDataService;
-import com.knockk.api.entity.AdminEntity;
-import com.knockk.api.entity.AdminResidentEntity;
-import com.knockk.api.entity.BuildingEntity;
-import com.knockk.api.model.AdminModel;
-import com.knockk.api.model.AdminResidentModel;
-import com.knockk.api.model.BuildingModel;
-import com.knockk.api.model.LoginModel;
+import com.knockk.api.util.entity.AdminEntity;
+import com.knockk.api.util.entity.AdminResidentEntity;
+import com.knockk.api.util.entity.BuildingEntity;
+import com.knockk.api.util.model.AdminModel;
+import com.knockk.api.util.model.AdminResidentModel;
+import com.knockk.api.util.model.BuildingModel;
 
 /**
  * This class implements the business service for admin
@@ -178,8 +177,9 @@ public class AdminBusinessService {
 
 	/**
 	 * Returns the number of residents.
+	 * 
 	 * @param buildingId : id of the building
-	 * @param verified : if the residents are verified
+	 * @param verified   : if the residents are verified
 	 * @return number of residents
 	 */
 	public int getNumberOfResidents(UUID buildingId, Boolean verified) {
