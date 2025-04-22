@@ -1,12 +1,16 @@
 // Grace Radlund
-// 12-15-2024
-// Tests generated with the help of ChatGPT 4o mini
+// 4-22-2024
+// Tests generated with the help of ChatGPT 4o mini and Grok
 package com.knockk.api.business;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.NoSuchElementException;
@@ -20,51 +24,68 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.knockk.api.data.repository.UserRepository;
 import com.knockk.api.data.service.ResidentDataService;
-import com.knockk.api.entity.FriendshipEntity;
-import com.knockk.api.entity.UnitEntity;
-import com.knockk.api.entity.UserEntity;
-import com.knockk.api.model.FriendshipModel;
-import com.knockk.api.model.LoginModel;
-import com.knockk.api.model.NeighborRoomModel;
-import com.knockk.api.model.UnitResidentModel;
-import com.knockk.api.model.UserModel;
-import com.knockk.api.model.OptionalResidentModel;
-import com.knockk.api.entity.ResidentEntity;
-import com.knockk.api.data.Gender;
+import com.knockk.api.util.Gender;
+import com.knockk.api.util.entity.BuildingEntity;
+import com.knockk.api.util.entity.FriendshipEntity;
+import com.knockk.api.util.entity.ResidentEntity;
+import com.knockk.api.util.entity.UnitEntity;
+import com.knockk.api.util.entity.UserEntity;
+import com.knockk.api.util.model.FriendshipModel;
+import com.knockk.api.util.model.LoginModel;
+import com.knockk.api.util.model.NeighborRoomModel;
+import com.knockk.api.util.model.OptionalResidentModel;
+import com.knockk.api.util.model.RegisterModel;
+import com.knockk.api.util.model.UnitResidentModel;
+import com.knockk.api.util.model.UserModel;
 
+/**
+ * Class for testing the admin business service class
+ */
 public class ResidentBusinessServiceTests {
 
-    // Mocking the ResidentDataService
+    // Mocking services, repository, and encoder
     @Mock
     private ResidentDataService dataService;
 
-    // Mock the UserRepository
     @Mock
     private UserRepository userRepository;
 
+    @Mock
     private ResidentBusinessService residentBusinessService;
 
+    @Mock
     private BCryptPasswordEncoder passwordEncoder;
 
     // Create mock data
-    private String validEmail = "testuser@example.com";
-    private String validPassword = "password123";
+    private String validEmail;
+    private String validPassword;
     private UserEntity userEntity;
-    private UUID validUUID = UUID.randomUUID();
     private String invalidEmail = "invaliduser@example.com";
     private String invalidPassword = "wrongpassword";
     private UUID invitorId;
     private UUID inviteeId;
     private UUID residentId;
     private UUID friendId;
-    UUID neighborId = UUID.randomUUID();
-    private FriendshipModel mockFriendshipNotConnected;
+    private UUID neighborId = UUID.randomUUID();
     private FriendshipEntity mockFriendshipEntity;
+    private FriendshipModel mockFriendshipNotConnected;
     private UUID unitId = UUID.randomUUID();
     private UUID buildingId = UUID.randomUUID();
+
+    private String street;
+    private UUID buildingId1;
+    private UUID buildingId2;
+    private BuildingEntity building1;
+    private BuildingEntity building2;
+
     private int floor = 2;
     private int room = 101;
-    UnitEntity mockUnitEntity = new UnitEntity(UUID.randomUUID(), floor, room, 500, buildingId);
+    private UnitEntity mockUnitEntity = new UnitEntity(UUID.randomUUID(), floor, room, 500, buildingId);
+
+    private UserModel validCredentials;
+    private String encodedPassword;
+
+    private RegisterModel validResident;
 
     @BeforeEach
     public void setUp() {
@@ -72,8 +93,7 @@ public class ResidentBusinessServiceTests {
         MockitoAnnotations.openMocks(this);
         // Inject mock into the service
         residentBusinessService = new ResidentBusinessService(dataService,
-        passwordEncoder
-        );
+                passwordEncoder);
 
         userEntity = new UserEntity(residentId, validEmail, validPassword);
 
@@ -84,44 +104,133 @@ public class ResidentBusinessServiceTests {
         friendId = UUID.randomUUID();
         mockFriendshipNotConnected = new FriendshipModel(invitorId, inviteeId, false);
         mockFriendshipEntity = new FriendshipEntity(UUID.randomUUID(), null, invitorId, inviteeId, false);
+
+        validEmail = "testuser@example.com";
+        validPassword = "password123";
+        validCredentials = new UserModel(validEmail, validPassword);
+        encodedPassword = "$2a$10$encodedPassword";
+
+        street = "123 Main St";
+        buildingId1 = UUID.randomUUID();
+        buildingId2 = UUID.randomUUID();
+        building1 = new BuildingEntity(buildingId1, "Encanto", "3300 W Camelback Road", 400, 6, 1,
+                new ArrayList<>(List.of(10, 30)), new ArrayList<>(List.of(20)), UUID.randomUUID());
+        building2 = new BuildingEntity(buildingId2, "Papago", "3300 W Camelback Road", 600, 7, 1,
+                new ArrayList<>(List.of(10, 30, 50)), new ArrayList<>(List.of(20, 70)), UUID.randomUUID());
+
+        validResident = new RegisterModel(
+                residentId.toString(),
+                "Grace",
+                "Radlund",
+                "Female",
+                UUID.randomUUID().toString(),
+                21,
+                "Sun Prairie",
+                "Bio",
+                "profile.jpg",
+                "background.jpg",
+                "ginsta",
+                "gsnap",
+                "gx",
+                "gface");
+
     }
 
-    // Create friendship was changed
-    // Valid case where the friendship is created successfully
-    // In this case, the service will call the data service, which will return a
-    // valid FriendshipEntity
-    // @Test
-    // void testCreateFriendship_Success() throws Exception {
-    // // Mock the data service method
-    // when(dataService.createFriendship(invitorId,
-    // inviteeId)).thenReturn(mockFriendshipEntity);
-
-    // // Act
-    // //FriendshipModel result =
-    // residentBusinessService.createFriendship(invitorId, inviteeId);
-
-    // // Assert
-    // assertNotNull(result); // Check that the result is not null
-    // assertEquals(invitorId, result.getInvitorId()); // Check that the Invitor ID
-    // matches
-    // assertEquals(inviteeId, result.getInviteeId()); // Check that the Invitee ID
-    // matches
-    // assertFalse(result.isAccepted()); // Check that the friendship is not
-    // accepted by default
-    // }
-
-    // Create friendship method was changed
-    // Case where DataService throws an exception, testing error handling
-    // This simulates a failure when trying to create the friendship
+    /**
+     * Tests getBuildings success case with multiple buildings.
+     * Simulates a valid street, expecting a list of building names.
+     */
     @Test
-    void testCreateFriendship_DataServiceFailure() throws Exception {
-        // Mock the data service to throw an exception
-        when(dataService.createFriendship(invitorId, inviteeId)).thenThrow(new RuntimeException("Data service error"));
+    public void testGetBuildingsSuccess() throws Exception {
+        // Arrange: Mock dataService to return a list of BuildingEntity.
+        when(dataService.findBuilding(eq(street)))
+                .thenReturn(Arrays.asList(building1, building2));
 
-        // Act & Assert
-        // assertThrows(RuntimeException.class, () ->
-        // residentBusinessService.createFriendship(invitorId, inviteeId));
-        // Expecting a RuntimeException to be thrown due to the mocked failure
+        // Act: Call getBuildings with a valid street.
+        List<String> result = residentBusinessService.getBuildings(street);
+
+        // Assert: Verify the returned list contains the correct building names.
+        assertNotNull(result, "Result list should not be null");
+        assertEquals(2, result.size(), "Should return two building names");
+        assertTrue(result.contains("Encanto"), "Should contain Encanto");
+        assertTrue(result.contains("Papago"), "Should contain Papago");
+    }
+
+    /**
+     * Tests getBuildings success case with no buildings.
+     * Simulates a valid street with no buildings, expecting an empty list.
+     */
+    @Test
+    public void testGetBuildingsEmptyList() throws Exception {
+        // Arrange: Mock dataService to return an empty list.
+        when(dataService.findBuilding(eq(street)))
+                .thenReturn(Collections.emptyList());
+
+        // Act: Call getBuildings with a valid street.
+        List<String> result = residentBusinessService.getBuildings(street);
+
+        // Assert: Verify the returned list is empty.
+        assertNotNull(result, "Result list should not be null");
+        assertTrue(result.isEmpty(), "Result list should be empty");
+    }
+
+    /**
+     * Tests getBuildings failure case when no buildings are found.
+     * Simulates an invalid street, expecting an Exception from dataService.
+     */
+    @Test
+    public void testGetBuildingsNotFound() throws Exception {
+        // Arrange: Mock dataService to throw an Exception.
+        String invalidStreet = "999 Unknown St";
+        when(dataService.findBuilding(eq(invalidStreet)))
+                .thenThrow(new Exception("Invalid address (case sensitive)."));
+
+        // Act & Assert: Expect Exception when no buildings are found.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentBusinessService.getBuildings(invalidStreet),
+                "Should throw Exception when no buildings are found");
+        assertEquals("Invalid address (case sensitive).", exception.getMessage(),
+                "Exception message should match");
+    }
+
+    /**
+     * Tests createAccount success case with valid credentials.
+     * Simulates a unique email, expecting a UUID from dataService.
+     */
+    @Test
+    public void testCreateAccountSuccess() throws Exception {
+        // Arrange: Mock passwordEncoder and dataService.
+        when(passwordEncoder.encode(eq(validPassword)))
+                .thenReturn(encodedPassword);
+        when(dataService.createAccount(any(UserEntity.class)))
+                .thenReturn(residentId);
+
+        // Act: Call createAccount with valid credentials.
+        UUID result = residentBusinessService.createAccount(validCredentials);
+
+        // Assert: Verify the returned UUID matches the expected residentId.
+        assertNotNull(result, "Resident ID should not be null");
+        assertEquals(residentId, result, "Resident ID should match");
+    }
+
+    /**
+     * Tests createAccount failure case with duplicate email.
+     * Simulates an existing email, expecting an Exception from dataService.
+     */
+    @Test
+    public void testCreateAccountDuplicateEmail() throws Exception {
+        // Arrange: Mock passwordEncoder and dataService to throw an Exception.
+        when(passwordEncoder.encode(eq(validPassword)))
+                .thenReturn(encodedPassword);
+        when(dataService.createAccount(any(UserEntity.class)))
+                .thenThrow(new Exception("Email already exists: " + validEmail));
+
+        // Act & Assert: Expect Exception when email is already in use.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentBusinessService.createAccount(validCredentials),
+                "Should throw Exception for duplicate email");
+        assertEquals("Email already exists: " + validEmail, exception.getMessage(),
+                "Exception message should match");
     }
 
     // Successful deletion of a friendship
@@ -157,27 +266,6 @@ public class ResidentBusinessServiceTests {
         assertFalse(result); // Verify that the result is false, indicating failure to delete
     }
 
-    // Successfully retrieving a friendship that exists
-    // This case tests the scenario when the friendship exists and is returned as a
-    // model.
-    // @Test
-    // void testGetFriendship_Success() {
-    // when(dataService.findFriendship(residentId,
-    // friendId)).thenReturn(Optional.of(mockFriendshipEntity));
-
-    // // Act
-    // FriendshipModel result = residentBusinessService.getFriendship(residentId,
-    // friendId);
-
-    // // Assert
-    // assertNotNull(result); // Verify that the result is not null
-    // assertEquals(residentId, result.getInvitorId()); // Check the invitorId in
-    // the model
-    // assertEquals(friendId, result.getInviteeId()); // Check the inviteeId in the
-    // model
-    // assertTrue(result.isAccepted()); // Check that the friendship is accepted
-    // }
-
     // Friendship does not exist (NoSuchElementException)
     // This case checks if the method correctly throws a NoSuchElementException when
     // the friendship doesn't exist.
@@ -195,29 +283,6 @@ public class ResidentBusinessServiceTests {
         // Assert: Verify that the exception message is as expected
         assertEquals("Not Found. Friendship does not exist.", exception.getMessage());
     }
-
-    // Successfully updating a friendship status
-    // This case tests a scenario where the friendship status is successfully
-    // updated to accepted.
-    // @Test
-    // void testUpdateFriendship_Success_Accepted() throws Exception {
-    // // Mock the data service to return a FriendshipEntity with the updated
-    // // acceptance status
-    // when(dataService.updateFriendship(invitorId, inviteeId,
-    // true)).thenReturn(mockFriendshipEntity);
-
-    // // Act
-    // FriendshipModel result = residentBusinessService.updateFriendship(invitorId,
-    // inviteeId, true);
-
-    // // Assert
-    // assertNotNull(result); // Verify that the result is not null
-    // assertEquals(invitorId, result.getInvitorId()); // Check that the Invitor ID
-    // matches
-    // assertEquals(inviteeId, result.getInviteeId()); // Check that the Invitee ID
-    // matches
-    // assertTrue(result.isAccepted()); // Verify that the friendship is accepted
-    // }
 
     // Successfully updating a friendship status to not accepted
     // This case tests a scenario where the friendship status is successfully
@@ -238,25 +303,31 @@ public class ResidentBusinessServiceTests {
         assertFalse(result.isAccepted()); // Verify that the friendship is not accepted
     }
 
+    /**
+     * Tests login success case.
+     * Simulates valid credentials, expecting a LoginModel with resident ID and
+     * verification status.
+     * 
+     * @throws CredentialException
+     */
     @Test
-    public void testLogin_Success() throws CredentialException {
-        // Create a valid UserModel
-        UserModel validUser = new UserModel(validEmail, validPassword);
+    public void testLoginSuccess() throws CredentialException {
+        // Arrange: Mock dataService to return a UserEntity and verification status.
+        when(dataService.findResidentByEmailAndPassword(validEmail, validPassword))
+                .thenReturn(new UserEntity(residentId, validEmail, encodedPassword));
+        when(passwordEncoder.matches(validPassword, encodedPassword))
+                .thenReturn(true);
+        when(dataService.checkVerified(residentId))
+                .thenReturn(true);
 
-        // Mock the ResidentDataService to return the expect resident and verification
-        when(dataService.findResidentByEmailAndPassword(validEmail, validPassword)).thenReturn(userEntity);
-        when(dataService.checkVerified(validUUID)).thenReturn(true);
+        // Act: Call the login method with valid credentials.
+        LoginModel result = residentBusinessService.login(new UserModel(validEmail, validPassword));
 
-        // Call the login method
-        LoginModel result = residentBusinessService.login(validUser);
-
-        // Verify the returned UUID matches the mocked validUUID
-        assertNotNull(result);
-        assertEquals(validUUID, result.getId());
-
-        // Verify that the dataService method was called once with the correct
-        // credentials
-        verify(dataService, times(1)).findResidentByEmailAndPassword(validEmail, validPassword);
+        // Assert: Verify the LoginModel contains the correct resident ID and verified
+        // status.
+        assertNotNull(result, "LoginModel should not be null");
+        assertEquals(residentId, result.getId(), "Resident ID should match");
+        assertTrue(result.isVerified(), "Verified status should be true");
     }
 
     // Test an unsuccessful login scenario
@@ -464,4 +535,40 @@ public class ResidentBusinessServiceTests {
         assertEquals("oldX", existingResident.getX()); // X handle remains unchanged
         assertEquals("oldFacebook", existingResident.getFacebook()); // Facebook remains unchanged
     }
+
+    /**
+     * Tests register success case with valid RegisterModel.
+     * Simulates a valid resident, expecting true from dataService.
+     */
+    @Test
+    public void testRegisterSuccess() throws Exception {
+        // Arrange: Mock dataService to return true.
+        when(dataService.createResident(any(ResidentEntity.class)))
+                .thenReturn(true);
+
+        // Act: Call register with valid RegisterModel.
+        boolean result = residentBusinessService.register(validResident);
+
+        // Assert: Verify the method returns true.
+        assertTrue(result, "Should return true for successful registration");
+    }
+
+    /**
+     * Tests register failure case with duplicate resident ID or lease ID.
+     * Simulates an existing resident, expecting an Exception from dataService.
+     */
+    @Test
+    public void testRegisterDuplicateResident() throws Exception {
+        // Arrange: Mock dataService to throw an Exception.
+        when(dataService.createResident(any(ResidentEntity.class)))
+                .thenThrow(new Exception("Could not save the resident."));
+
+        // Act & Assert: Expect Exception for duplicate resident.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentBusinessService.register(validResident),
+                "Should throw Exception for duplicate resident");
+        assertEquals("Could not save the resident.", exception.getMessage(),
+                "Exception message should match");
+    }
+
 }

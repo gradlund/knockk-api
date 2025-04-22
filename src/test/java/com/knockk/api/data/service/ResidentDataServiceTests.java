@@ -1,6 +1,6 @@
 // Grace Radlund
-// 12-15-2024
-// Tests generated with the help of ChatGPT 4o mini
+// 4-22-2024
+// Tests generated with the help of ChatGPT 4o mini and Grok
 package com.knockk.api.data.service;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -22,7 +23,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import com.knockk.api.data.repository.BuildingRepository;
 import com.knockk.api.data.repository.FriendshipRepository;
@@ -30,15 +30,17 @@ import com.knockk.api.data.repository.LeaseRepository;
 import com.knockk.api.data.repository.ResidentRepository;
 import com.knockk.api.data.repository.UnitRepository;
 import com.knockk.api.data.repository.UserRepository;
-import com.knockk.api.entity.AdminEntity;
-import com.knockk.api.entity.BuildingEntity;
-import com.knockk.api.entity.FriendshipEntity;
-import com.knockk.api.entity.ResidentEntity;
-import com.knockk.api.entity.UnitEntity;
-import com.knockk.api.entity.UserEntity;
-import com.knockk.api.data.Gender;
+import com.knockk.api.util.Gender;
+import com.knockk.api.util.entity.BuildingEntity;
+import com.knockk.api.util.entity.FriendshipEntity;
+import com.knockk.api.util.entity.ResidentEntity;
+import com.knockk.api.util.entity.UnitEntity;
+import com.knockk.api.util.entity.UserEntity;
 import com.knockk.api.data.mapper.ResidentMapper;
 
+/**
+ * Class that tests the resident data service
+ */
 public class ResidentDataServiceTests {
 
     // Mock the BuildingRepository to simulate interactions with the database.
@@ -65,9 +67,11 @@ public class ResidentDataServiceTests {
     @Mock
     private UnitRepository unitRepository;
 
+    // Mock the datasource
     @Mock
     private DataSource dataSource;
 
+    // Mock the jdbc template
     @Mock
     private JdbcTemplate jdbcTemplateObject;
 
@@ -87,10 +91,14 @@ public class ResidentDataServiceTests {
     private ArrayList<Integer> noRoomsRight;
     private ArrayList<Integer> noRoomsLeft;
     private UUID buildingId;
+    private String address;
+    private String name;
 
     // Mock test unit information
     private UUID leaseId;
     private UUID unitId;
+    private Date startDate;
+    private Date endDate;
 
     // Mock test friendship information
     private UUID invitorId;
@@ -119,9 +127,17 @@ public class ResidentDataServiceTests {
         // mockBuilding = new BuildingEntity(UUID.randomUUID(), "Encanto", 500, 6, 1,
         // noRoomsRight, noRoomsLeft, UUID.randomUUID());
         mockBuilding = mock(BuildingEntity.class);
+        address = "123 Main St";
+        name = "Sunset Towers";
+        startDate = new Date();
+        endDate = new Date();
+
+        // Mock UUIDs
+        residentId = UUID.randomUUID();
+        friendId = UUID.randomUUID();
 
         // Mock resident data
-        mockResident = new ResidentEntity(UUID.randomUUID(), "Grace", "Radlund", Gender.Female, 21, "Sun Prairie", "",
+        mockResident = new ResidentEntity(residentId, "Grace", "Radlund", Gender.Female, 21, "Sun Prairie", "",
                 "", "", "ginsta", "gsnap", "gx", "gface", leaseId, true);
 
         // Mock friendship data
@@ -129,14 +145,11 @@ public class ResidentDataServiceTests {
         invitorId = UUID.randomUUID();
         inviteeId = UUID.randomUUID();
 
-        // Mock UUIDs
-        residentId = UUID.randomUUID();
-        friendId = UUID.randomUUID();
-
         user = new UserEntity(residentId, validEmail, validPassword);
 
     }
 
+    // Test successfully creating an account
     @Test
     public void testCreateAccount_Success() throws Exception {
         // Arrange: Set up a new user with no existing email
@@ -158,6 +171,7 @@ public class ResidentDataServiceTests {
         verifyNoMoreInteractions(userRepository);
     }
 
+    // Test that throws an exception if the email already exists
     @Test
     public void testCreateAccount_EmailAlreadyExists_ThrowsException() {
         // Arrange: Set up a user with an existing email
@@ -560,6 +574,70 @@ public class ResidentDataServiceTests {
     }
 
     /**
+     * Tests createResident success case.
+     * Simulates a valid ResidentEntity, expecting true when the resident is saved
+     * successfully.
+     */
+    @Test
+    public void testCreateResidentSuccess() throws Exception {
+        // Arrange: Mock residentRepository.register to return 1 (one row affected).
+        when(residentRepository.register(
+                eq(residentId),
+                eq("Grace"),
+                eq("Radlund"),
+                eq(21),
+                eq("Sun Prairie"),
+                eq(""),
+                eq(""),
+                eq(""),
+                eq("ginsta"),
+                eq("gsnap"),
+                eq("gx"),
+                eq("gface"),
+                eq(Gender.Female),
+                eq(leaseId),
+                eq(true))).thenReturn(1);
+
+        // Act: Call createResident with a valid ResidentEntity.
+        boolean result = residentDataService.createResident(mockResident);
+
+        // Assert: Verify the method returns true.
+        assertTrue(result, "createResident should return true on success");
+    }
+
+    /**
+     * Tests createResident failure case when no rows are affected.
+     * Simulates a repository failure, expecting an Exception to be thrown.
+     */
+    @Test
+    public void testCreateResidentFailure() {
+        // Arrange: Mock residentRepository.register to return 0 (no rows affected).
+        when(residentRepository.register(
+                eq(residentId),
+                eq("Grace"),
+                eq("Radlund"),
+                eq(21),
+                eq("Sun Prairie"),
+                eq(""),
+                eq(""),
+                eq(""),
+                eq("ginsta"),
+                eq("gsnap"),
+                eq("gx"),
+                eq("gface"),
+                eq(Gender.Female),
+                eq(leaseId),
+                eq(true))).thenReturn(0);
+
+        // Act & Assert: Expect Exception when no rows are affected.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentDataService.createResident(mockResident),
+                "Should throw Exception when no rows are affected");
+        assertEquals("Could not save the resident.", exception.getMessage(),
+                "Exception message should match");
+    }
+
+    /**
      * Test to verify that deleteFriendship returns true when the friendship is
      * deleted successfully.
      */
@@ -762,10 +840,10 @@ public class ResidentDataServiceTests {
 
     // Test case for successful login with valid email and password.
     @Test
-    public void testFindResidentByEmailAndPassword_Success() throws CredentialException {
+    public void testFindResidentByEmail_Success() throws CredentialException {
         // Mock the repository to return a valid UUID when correct credentials are
         // provided.
-        when(userRepository.findByEmailAndPassword(validEmail, validPassword)).thenReturn(Optional.of(validId));
+        when(userRepository.findByEmail(validEmail)).thenReturn(Optional.of(user));
 
         // Call the service method with valid credentials and capture the result.
         UserEntity result = residentDataService.findResidentByEmailAndPassword(validEmail, validPassword);
@@ -773,19 +851,19 @@ public class ResidentDataServiceTests {
         // Assert that the returned UUID is not null, indicating a successful login.
         assertNotNull(result);
         // Assert that the returned UUID matches the expected valid ID.
-        assertEquals(validId, result);
+        assertEquals(user, result);
 
         // Verify that the repository method was called exactly once with the correct
         // parameters.
-        verify(userRepository, times(1)).findByEmailAndPassword(validEmail, validPassword);
+        verify(userRepository, times(1)).findByEmail(validEmail);
     }
 
     // Test case for invalid credentials (i.e., wrong email or password).
     @Test
-    public void testFindResidentByEmailAndPassword_InvalidCredentials() {
+    public void testFindResidentByEmail_InvalidCredentials() {
         // Mock the repository to return an empty Optional when invalid credentials are
         // provided.
-        when(userRepository.findByEmailAndPassword(validEmail, validPassword)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(validEmail)).thenReturn(Optional.empty());
 
         // Assert that the service method throws a CredentialException when no matching
         // resident is found.
@@ -795,15 +873,15 @@ public class ResidentDataServiceTests {
 
         // Verify that the repository method was called exactly once with the correct
         // parameters.
-        verify(userRepository, times(1)).findByEmailAndPassword(validEmail, validPassword);
+        verify(userRepository, times(1)).findByEmail(validEmail);
     }
 
     // Test case for an empty email provided in the login attempt.
     @Test
-    public void testFindResidentByEmailAndPassword_EmptyEmail() throws CredentialException {
+    public void testFindResidentByEmail_EmptyEmail() throws CredentialException {
         // Simulate an empty email and mock the repository to return an empty Optional.
         String emptyEmail = "";
-        when(userRepository.findByEmailAndPassword(emptyEmail, validPassword)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(emptyEmail)).thenReturn(Optional.empty());
 
         // Assert that the service method throws a CredentialException when the email is
         // empty.
@@ -813,26 +891,7 @@ public class ResidentDataServiceTests {
 
         // Verify that the repository method was called exactly once with the empty
         // email.
-        verify(userRepository, times(1)).findByEmailAndPassword(emptyEmail, validPassword);
-    }
-
-    // Test case for an empty password provided in the login attempt.
-    @Test
-    public void testFindResidentByEmailAndPassword_EmptyPassword() throws CredentialException {
-        // Simulate an empty password and mock the repository to return an empty
-        // Optional.
-        String emptyPassword = "";
-        when(userRepository.findByEmailAndPassword(validEmail, emptyPassword)).thenReturn(Optional.empty());
-
-        // Assert that the service method throws a CredentialException when the password
-        // is empty.
-        assertThrows(CredentialException.class, () -> {
-            residentDataService.findResidentByEmailAndPassword(validEmail, emptyPassword);
-        });
-
-        // Verify that the repository method was called exactly once with the empty
-        // password.
-        verify(userRepository, times(1)).findByEmailAndPassword(validEmail, emptyPassword);
+        verify(userRepository, times(1)).findByEmail(emptyEmail);
     }
 
     /**
@@ -872,6 +931,141 @@ public class ResidentDataServiceTests {
 
         // Verify that the findById method was called with the correct unitId
         verify(unitRepository).findById(unitId);
+    }
+
+    /**
+     * Tests getBuildingIdByAddressAndName success case.
+     * Simulates valid address and name, expecting a UUID when the building is
+     * found.
+     */
+    @Test
+    public void testGetBuildingIdByAddressAndNameSuccess() throws Exception {
+        // Arrange: Mock buildingRepository to return an Optional containing a UUID.
+        when(buildingRepository.findByAddressAndName(address, name))
+                .thenReturn(Optional.of(buildingId));
+
+        // Act: Call getBuildingIdByAddressAndName with valid address and name.
+        UUID result = residentDataService.getBuildingIdByAddressAndName(address, name);
+
+        // Assert: Verify the returned UUID matches the expected building ID.
+        assertNotNull(result, "Building ID should not be null");
+        assertEquals(buildingId, result, "Building ID should match");
+    }
+
+    /**
+     * Tests getBuildingIdByAddressAndName failure case when building is not found.
+     * Simulates invalid address and name, expecting an Exception to be thrown.
+     */
+    @Test
+    public void testGetBuildingIdByAddressAndNameNotFound() {
+        // Arrange: Mock buildingRepository to return an empty Optional.
+        when(buildingRepository.findByAddressAndName(address, name))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert: Expect Exception when building is not found.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentDataService.getBuildingIdByAddressAndName(address, name),
+                "Should throw Exception when building is not found");
+        assertEquals("Building does not exist with given street and address.", exception.getMessage(),
+                "Exception message should match");
+    }
+
+    /**
+     * Tests getLeaseId success case.
+     * Simulates valid inputs, expecting a UUID when the lease is found.
+     */
+    @Test
+    public void testGetLeaseIdSuccess() throws Exception {
+        // Arrange: Mock leaseRepository to return an Optional containing a UUID.
+        when(leaseRepository.findLeaseId(address, mockBuilding.getName(), mockUnit.getFloor(), mockUnit.getRoom(),
+                startDate.toString(), endDate.toString()))
+                .thenReturn(Optional.of(leaseId));
+
+        // Act: Call getLeaseId with valid inputs.
+        UUID result = residentDataService.getLeaseId(address, mockBuilding.getName(), mockUnit.getFloor(),
+                mockUnit.getRoom(), startDate.toString(), endDate.toString());
+
+        // Assert: Verify the returned UUID matches the expected lease ID.
+        assertNotNull(result, "Lease ID should not be null");
+        assertEquals(leaseId, result, "Lease ID should match");
+    }
+
+    /**
+     * Tests getLeaseId failure case when lease is not found.
+     * Simulates invalid inputs, expecting an Exception to be thrown.
+     */
+    @Test
+    public void testGetLeaseIdNotFound() {
+        // Arrange: Mock leaseRepository to return an empty Optional.
+        when(leaseRepository.findLeaseId(address, mockBuilding.getName(), mockUnit.getFloor(), mockUnit.getRoom(),
+                startDate.toString(), endDate.toString()))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert: Expect Exception when lease is not found.
+        Exception exception = assertThrows(Exception.class,
+                () -> residentDataService.getLeaseId(address, mockBuilding.getName(), mockUnit.getFloor(),
+                        mockUnit.getRoom(), startDate.toString(), endDate.toString()),
+                "Should throw Exception when lease is not found");
+        assertEquals("Lease not found.", exception.getMessage(),
+                "Exception message should match");
+    }
+
+    /**
+     * Tests getResidentName success case with isFullName = true.
+     * Simulates a valid residentId, expecting the full name (firstName + lastName).
+     */
+    @Test
+    public void testGetResidentNameFullNameSuccess() {
+        // Arrange: Mock jdbcTemplateObject.query to return a list with the
+        // ResidentEntity.
+        String expectedSql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + residentId + "'";
+        when(jdbcTemplateObject.query(eq(expectedSql), any(ResidentMapper.class)))
+                .thenReturn(List.of(mockResident));
+
+        // Act: Call getResidentName with isFullName = true.
+        String result = residentDataService.getResidentName(residentId, true);
+
+        // Assert: Verify the returned name is the full name.
+        assertEquals("Grace Radlund", result, "Should return full name");
+    }
+
+    /**
+     * Tests getResidentName success case with isFullName = false.
+     * Simulates a valid residentId, expecting only the first name.
+     */
+    @Test
+    public void testGetResidentNameFirstNameSuccess() {
+        // Arrange: Mock jdbcTemplateObject.query to return a list with the
+        // ResidentEntity.
+        String expectedSql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + residentId + "'";
+        when(jdbcTemplateObject.query(eq(expectedSql), any(ResidentMapper.class)))
+                .thenReturn(List.of(mockResident));
+
+        // Act: Call getResidentName with isFullName = false.
+        String result = residentDataService.getResidentName(residentId, false);
+
+        // Assert: Verify the returned name is the first name.
+        assertEquals("Grace", result, "Should return first name");
+    }
+
+    /**
+     * Tests getResidentName failure case when resident is not found.
+     * Simulates an invalid residentId, expecting a NoSuchElementException from
+     * getResidentEntity.
+     */
+    @Test
+    public void testGetResidentNameNotFound() {
+        // Arrange: Mock jdbcTemplateObject.query to return an empty list.
+        String expectedSql = "SELECT * FROM \"Resident\" WHERE resident_id = '" + residentId + "'";
+        when(jdbcTemplateObject.query(eq(expectedSql), any(ResidentMapper.class)))
+                .thenReturn(Collections.emptyList());
+
+        // Act & Assert: Expect NoSuchElementException when resident is not found.
+        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
+                () -> residentDataService.getResidentName(residentId, true),
+                "Should throw NoSuchElementException when resident is not found");
+        assertEquals("Problem retrieving resident.", exception.getMessage(),
+                "Exception message should match");
     }
 
     /**

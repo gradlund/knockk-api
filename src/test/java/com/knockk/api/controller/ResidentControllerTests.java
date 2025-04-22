@@ -1,26 +1,29 @@
 // Grace Radlund
-// 12-15-2024
-// Tests generated with the help of ChatGPT 4o mini
+// 4-22-2024
+// Tests generated with the help of ChatGPT 4o mini and Grok
 package com.knockk.api.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knockk.api.business.ResidentBusinessService;
-import com.knockk.api.data.Gender;
-import com.knockk.api.model.FriendshipModel;
-import com.knockk.api.model.LoginModel;
-import com.knockk.api.model.NeighborRoomModel;
-import com.knockk.api.model.OptionalResidentModel;
-import com.knockk.api.model.ResidentModel;
-import com.knockk.api.model.ResponseModel;
-import com.knockk.api.model.UnitResidentModel;
-import com.knockk.api.model.UserModel;
+import com.knockk.api.util.Gender;
+import com.knockk.api.util.model.FriendshipModel;
+import com.knockk.api.util.model.LoginModel;
+import com.knockk.api.util.model.NeighborRoomModel;
+import com.knockk.api.util.model.OptionalResidentModel;
+import com.knockk.api.util.model.RegisterModel;
+import com.knockk.api.util.model.ResidentModel;
+import com.knockk.api.util.model.ResponseModel;
+import com.knockk.api.util.model.UnitResidentModel;
+import com.knockk.api.util.model.UserModel;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,11 +32,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,16 +63,20 @@ public class ResidentControllerTests {
         @Mock
         private Errors errors;
 
+        // ObjectMapper for JSON serialization/deserialization.
+        private ObjectMapper objectMapper;
+
         // Declare a valid AdminModel to use in tests.
         private UserModel validUserModel;
 
-        // Mock id
+        // Mock ids
         private UUID mockResidentId;
         private UUID mockFriendId;
         private UUID invitorId;
         private UUID inviteeId;
 
-        private FriendshipModel friendRequest;
+        // Mock friendship
+        private FriendshipModel friendshipRequest;
         private FriendshipModel friendshipResponse;
 
         // Bad mock ids
@@ -76,6 +86,13 @@ public class ResidentControllerTests {
         // Mocks for unit information
         private int mockFloor;
         private int mockRoom;
+        private String address;
+        private String buildingName;
+        private Date startDate;
+        private Date endDate;
+        private UUID leaseID;
+
+        private List<String> buildings;
 
         // Mock resident
         private ResidentModel mockResident;
@@ -85,6 +102,9 @@ public class ResidentControllerTests {
 
         @BeforeEach
         public void setUp() {
+                // Initialize ObjectMapper for JSON serialization.
+                objectMapper = new ObjectMapper();
+
                 // Initialize the validAdminModel with sample valid credentials before each
                 // test.
                 validUserModel = new UserModel("validUsername", "validPassword");
@@ -97,12 +117,19 @@ public class ResidentControllerTests {
                 inviteeId = UUID.randomUUID();
                 invitorId = UUID.randomUUID();
 
-                friendRequest = new FriendshipModel(invitorId, inviteeId, false);
+                friendshipRequest = new FriendshipModel(invitorId, inviteeId, false);
                 friendshipResponse = new FriendshipModel(invitorId, inviteeId, false);
 
                 // Unit information
                 mockFloor = 2;
                 mockRoom = 101;
+                address = "123 Street";
+                buildingName = "building";
+                startDate = new Date();
+                endDate = new Date();
+                leaseID = UUID.randomUUID();
+
+                buildings = Arrays.asList("Building A", "Building B");
 
                 // Models
                 // Mock resident
@@ -115,87 +142,146 @@ public class ResidentControllerTests {
 
         }
 
-//         @Test
-//     public void testUpdateFriendship_Success() throws Exception {
-//         when(service.updateFriendship(invitorId, inviteeId, false)).thenReturn(friendshipResponse);
-
-//         ObjectMapper objectMapper = new ObjectMapper();
-//                 // Act: Perform POST request with valid JSON
-//                 String requestJson = objectMapper.writeValueAsString(friendRequest);
-//         mockMvc.perform(post("/friendship")
-//                 .content(requestJson))
-//             // Assert: Verify response
-//             .andExpect(status().isOk())
-//             .andExpect(jsonPath("$.message").value("Success"))
-//             .andExpect(jsonPath("$.status").value(200))
-//             .andExpect(jsonPath("$.data.invitorId").value(invitorId.toString()))
-//             .andExpect(jsonPath("$.data.inviteeId").value(inviteeId.toString()))
-//             .andExpect(jsonPath("$.data.accepted").value(false));
-
-//         // Verify service was called with correct arguments
-//         verify(service, times(1)).updateFriendship(invitorId, inviteeId, false);
-//         verifyNoMoreInteractions(service);
-//     }
-
-        // // Test case for successfully creating friend
-        // @Test
-        // public void testCreateFriendshipSuccess() throws Exception {
-        // // Create a mock FriendshipModel for the service response
-        // FriendshipModel mockFriendship = new FriendshipModel(mockResidentId,
-        // mockFriendId, false);
-
-        // // Mock the service method to return the mock friendship model
-        // //when(service.createFriendship(mockResidentId,
-        // mockFriendId)).thenReturn(mockFriendship);
-
-        // // Perform a POST request to the /friendship endpoint with valid data and
-        // check
-        // // the response
-        // mockMvc.perform(post("/residents/friendship")
-        // .contentType("application/json")
-        // .content("{\"invitorId\":\"" + mockResidentId + "\",\"inviteeId\":\"" +
-        // mockFriendId + "\"}"))
-        // .andExpect(status().isOk())
-        // .andExpect(jsonPath("$.message").value("Success"))
-        // .andExpect(jsonPath("$.status").value(200))
-        // .andExpect(jsonPath("$.data.invitorId").value(mockResidentId.toString()))
-        // .andExpect(jsonPath("$.data.inviteeId").value(mockFriendId.toString()));
-        // }
-
-        // Simulates a bad request (request body is empty).
-        // Checks the response body for the correct message and status code.
+        /**
+         * Tests the updateFriendship endpoint for the success case.
+         * Simulates a valid FriendshipModel, expecting a successful friendship
+         * creation.
+         */
         @Test
-        public void testCreateFriendshipBadRequest() throws Exception {
-                // Simulate validation errors by returning true when errors.hasErrors() is
-                // called
-                when(errors.hasErrors()).thenReturn(true);
+        public void testUpdateFriendshipSuccess() throws Exception {
+                // Arrange: Set up the mock service to return a FriendshipModel.
+                // Mock service.updateFriendship to return friendshipResponse when called with
+                // invitorId, inviteeId, and isAccepted.
+                when(service.updateFriendship(eq(invitorId), eq(inviteeId), eq(false)))
+                                .thenReturn(friendshipResponse);
+
+                // Act & Assert: Send a POST request and verify the success response.
+                mockMvc.perform(post("/residents/friendship")
+                                // Set content type to JSON for the request body.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize the friendshipRequest to JSON.
+                                .content(objectMapper.writeValueAsString(friendshipRequest)))
+                                // Expect HTTP status 200 OK.
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: message, status, and friendship data.
+                                .andExpect(jsonPath("$.message").value("Success"))
+                                .andExpect(jsonPath("$.status").value(200))
+                                // Verify FriendshipModel fields in the data object.
+                                .andExpect(jsonPath("$.data.invitorId").value(invitorId.toString()))
+                                .andExpect(jsonPath("$.data.inviteeId").value(inviteeId.toString()))
+                                .andExpect(jsonPath("$.data.accepted").value(false));
+        }
+
+        /**
+         * Tests the updateFriendship endpoint when service.updateFriendship throws an
+         * exception.
+         * Verifies that the catch block is triggered and handleErrorResponse returns an
+         * error response.
+         */
+        @Test
+        public void testUpdateFriendshipThrowsException() throws Exception {
+                // Arrange: Create an invalid FriendshipModel with null invitorId and inviteeId.
+                // Assumes @NotNull annotations on invitorId and inviteeId to trigger validation
+                // errors.
+                FriendshipModel invalidRequest = new FriendshipModel(null, null, false);
 
                 // Perform a POST request with invalid data (e.g., missing fields)
                 mockMvc.perform(post("/residents/friendship")
-                                .contentType("application/json"))
-                                // .content("{}")) // Empty JSON body
-                                .andExpect(status().isBadRequest()); // Expect 400 Bad Request
+                                // Set content type to JSON for the request body.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize the invalid FriendshipModel to JSON.
+                                .content(objectMapper.writeValueAsString(invalidRequest)))
+                                // Expect HTTP status 400 Bad Request due to validation failure.
+                                .andExpect(status().isForbidden())
+                                // Verify ResponseModel fields: message and status.
+                                // Matches the Exception("Bad Request") thrown in the controller.
+                                .andExpect(jsonPath("$.message").value("Bad Request"))
+                                .andExpect(jsonPath("$.status").value(400));
         }
 
-        // Create method was changed
-        // // Simulates a 404 response.
-        // // This test simulates a friendship that does not exist and causes an error.
-        // @Test
-        // public void testCreateFriendshipNotFound() throws Exception {
-        // // Simulate a not found scenario by throwing an exception when invalid IDs
-        // are
-        // // provided
-        // when(service.createFriendship(mockResidentId, mockFriendId))
-        // .thenThrow(new IllegalArgumentException("Not found"));
+        /**
+         * Tests createAccount success case.
+         * Simulates a valid UserModel, expecting a successful account creation.
+         */
+        @Test
+        public void testCreateAccountSuccess() throws Exception {
+                // Arrange: Mock service to return a UUID for valid credentials.
+                when(service.createAccount(eq(validUserModel)))
+                                .thenReturn(mockResidentId);
 
-        // // Perform the POST request
-        // mockMvc.perform(post("/residents/friendship")
-        // .contentType("application/json")
-        // .content("{\"invitorId\":\"" + mockResidentId + "\",\"inviteeId\":\"" +
-        // mockFriendId + "\"}"))
-        // .andExpect(status().isNotFound()) // Expect 404 Not Found
-        // .andExpect(jsonPath("$.message").value("Not Found"));
-        // }
+                // Act & Assert: Send POST request and verify response.
+                mockMvc.perform(post("/residents/create-account")
+                                // Set content type to JSON.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize valid UserModel to JSON.
+                                .content(objectMapper.writeValueAsString(validUserModel)))
+                                // Expect HTTP status 200 OK (as coded in controller).
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.message").value("Account Creation Successful"))
+                                .andExpect(jsonPath("$.status").value(204));
+        }
+
+        /**
+         * Tests getLease success case.
+         * Simulates valid query parameters, expecting a successful lease retrieval.
+         */
+        @Test
+        public void testGetLeaseSuccess() throws Exception {
+                // Arrange: Mock service to return a UUID for valid parameters.
+                when(service.getLease(anyString(), anyString(), anyInt(), anyInt(), anyString(), anyString()))
+                                .thenReturn(leaseID);
+
+                // Act & Assert: Send GET request to /residents/lease with valid parameters and
+                // verify response.
+                mockMvc.perform(get("/residents/lease")
+                                // Add query parameters.
+                                .param("address", address)
+                                .param("buildingName", buildingName)
+                                .param("floor", String.valueOf(mockFloor))
+                                .param("room", String.valueOf(mockRoom))
+                                .param("startDate", String.valueOf(startDate))
+                                .param("endDate", String.valueOf(endDate))
+                                // Set content type (optional for GET, included for consistency).
+                                .contentType(MediaType.APPLICATION_JSON))
+                                // Expect HTTP status 200 OK (as coded in controller).
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data").value(leaseID.toString()))
+                                .andExpect(jsonPath("$.message").value("Account Creation Successful"))
+                                .andExpect(jsonPath("$.status").value(204));
+        }
+
+        /**
+         * Tests getLease failure case.
+         * Simulates invalid parameters causing a service exception, expecting a Not
+         * Found response via handleErrorResponse.
+         */
+        @Test
+        public void testGetLeaseNotFound() throws Exception {
+                // Arrange: Mock service to throw an exception for invalid parameters.
+                when(service.getLease(anyString(), anyString(), anyInt(), anyInt(), anyString(), anyString()))
+                                .thenThrow(new RuntimeException("Lease not found"));
+
+                // Act & Assert: Send GET request to /residents/lease with parameters and verify
+                // error response.
+                mockMvc.perform(get("/residents/lease")
+                                // Use same parameters; exception is triggered by service logic.
+                                .param("address", address)
+                                .param("buildingName", buildingName)
+                                .param("floor", String.valueOf(mockFloor))
+                                .param("room", String.valueOf(mockRoom))
+                                .param("startDate", String.valueOf(startDate))
+                                .param("endDate", String.valueOf(endDate))
+                                .contentType(MediaType.APPLICATION_JSON))
+                                // Expect HTTP status 404 Not Found (as per handleErrorResponse for "not
+                                // found").
+                                .andExpect(status().isNotFound())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data.Error").value("Lease not found"))
+                                .andExpect(jsonPath("$.message").value("Not Found"))
+                                .andExpect(jsonPath("$.status").value(404));
+        }
 
         // Simulates a successful request to get an existing friendship where the
         // residents are connected.
@@ -236,27 +322,6 @@ public class ResidentControllerTests {
                                 // Expect HTTP INTERNAL SERVER ERROR (500) status due to invalid UUID format.
                                 .andExpect(status().isInternalServerError());
         }
-
-        // Todo - fix
-        // Test case where no friendship exists between the resident and friend.
-        // Checks the response body for the correct message and status code.
-        // @Test
-        // public void testGetFriendshipNotFound() throws Exception {
-        // // Mock the service to return null, indicating no friendship was found.
-        // when(service.createFriendship(mockResidentId,
-        // mockFriendId)).thenReturn(null);
-
-        // // Perform a GET request to the /friendship endpoint with valid residentId
-        // and friendId.
-        // mockMvc.perform(get("/residents/{residentId}/friendship/{friendId}",
-        // mockResidentId, mockFriendId))
-        // // Expect HTTP OK (200) status for a missing friendship.
-        // .andExpect(status().isOk())
-        // // Verify that the message in the response is "Not Found. Friendship does not
-        // exist.".
-        // .andExpect(jsonPath("$.data.Error").value("Not Found. Friendship does not
-        // exist."));
-        // }
 
         // Test case for successfully deleting an existing friendship.
         // Checks the response body for the correct message and status code.
@@ -303,6 +368,54 @@ public class ResidentControllerTests {
                                 invalidFriendId))
                                 // Expect HTTP Internal Server Error (500) status due to invalid UUID format.
                                 .andExpect(status().isInternalServerError());
+        }
+
+        /**
+         * Tests getBuilding success case.
+         * Simulates a valid street path variable, expecting a successful retrieval of
+         * building names.
+         */
+        @Test
+        public void testGetBuildingSuccess() throws Exception {
+                // Arrange: Mock service to return a list of building names for the street.
+                when(service.getBuildings(anyString()))
+                                .thenReturn(buildings);
+
+                // Act & Assert: Send GET request to /residents/building/{street} and verify
+                // response.
+                mockMvc.perform(get("/residents/building/{street}", address)
+                                // Set content type (optional for GET, included for consistency).
+                                .contentType(MediaType.APPLICATION_JSON))
+                                // Expect HTTP status 200 OK (as coded in controller).
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data[0]").value("Building A"))
+                                .andExpect(jsonPath("$.data[1]").value("Building B"))
+                                .andExpect(jsonPath("$.message").value("Success"))
+                                .andExpect(jsonPath("$.status").value(200));
+        }
+
+        /**
+         * Tests getBuilding failure case.
+         * Simulates an invalid or non-existent street, expecting a Not Found response
+         * via handleErrorResponse.
+         */
+        @Test
+        public void testGetBuildingNotFound() throws Exception {
+                // Arrange: Mock service to throw an exception for an invalid street.
+                when(service.getBuildings(anyString()))
+                                .thenThrow(new Exception("Invalid address (case sensitive)."));
+
+                // Act & Assert: Send GET request to /residents/building/{street} and verify
+                // error response.
+                mockMvc.perform(get("/residents/building/{street}", address)
+                                .contentType(MediaType.APPLICATION_JSON))
+                                // Expect HTTP status 404 Not Found (as per handleErrorResponse for "not
+                                // found").
+                                .andExpect(status().isNotFound())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.message").value("Not Found"))
+                                .andExpect(jsonPath("$.status").value(404));
         }
 
         // Test case for successfully retrieving the neighboring residents of a unit.
@@ -507,57 +620,56 @@ public class ResidentControllerTests {
                                 .andExpect(status().isInternalServerError());
         }
 
-        // Test case for successfully updating a resident's information.
-        // Checks the response body for the correct message, status code, and updated
-        // resident data.
+        /**
+         * Tests updateResident success case.
+         * Simulates a valid residentId and OptionalResidentModel, expecting a
+         * successful update.
+         */
         @Test
         public void testUpdateResidentSuccess() throws Exception {
-                // Mock the service to return true, indicating the update was successful.
-                when(service.updateResident(mockResidentId, optionalResident))
+                // Arrange: Mock service to return true for a valid update.
+                when(service.updateResident(eq(mockResidentId), any(OptionalResidentModel.class)))
                                 .thenReturn(true);
 
-                // Object mapper to convert model to json
-                ObjectMapper om = new ObjectMapper();
-                String json = om.writeValueAsString(optionalResident);
-
-                // Perform a PUT request to the /residents/{residentId} endpoint with the
-                // updated resident data.
-                mockMvc.perform(put("/residents/{residentId}", mockResidentId)
-                                .contentType("application/json")
-                                .content(json))
-                                .andExpect(status().isMethodNotAllowed()); // TODO - fix test
-                // Expect HTTP OK (200) status for a successful update.
-                // .andExpect(status().isOk())
-                // // Verify that the response contains the correct success message.
-                // .andExpect(jsonPath("$.message").value("Success"))
-                // // Verify that the response contains the updated resident's first name.
-                // .andExpect(jsonPath("$.data.age").value(22))
-                // // Verify that the response contains the updated resident's last name.
-                // .andExpect(jsonPath("$.data.hometown").value("Madison"));
+                // Act & Assert: Send POST request to /residents/{residentId} and verify
+                // response.
+                mockMvc.perform(post("/residents/{residentId}", mockResidentId)
+                                // Set content type to JSON.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize OptionalResidentModel to JSON.
+                                .content(objectMapper.writeValueAsString(mockResident)))
+                                // Expect HTTP status 200 OK (as coded in controller).
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data.hometown").value("Phoenix"))
+                                .andExpect(jsonPath("$.message").value("Success"))
+                                .andExpect(jsonPath("$.status").value(200));
         }
 
-        // // Test case for failed resident update, where the update operation was
-        // unsuccessful.
-        // // Checks the response body for the correct error message and status code.
-        // @Test
-        // public void testUpdateResidentFailure() throws Exception {
-        // // Mock the service to return false, indicating the update was unsuccessful.
-        // when(service.updateResident(mockResidentId, updatedResidentInfo))
-        // .thenThrow(new Exception("Couldn't update resident"));
+        /**
+         * Tests updateResident failure case for non-existent resident.
+         * Simulates a valid residentId but a service exception, expecting a Not Found
+         * response via handleErrorResponse.
+         */
+        @Test
+        public void testUpdateResidentNotFound() throws Exception {
+                // Arrange: Mock service to throw an exception for a non-existent resident.
+                when(service.updateResident(eq(mockResidentId), any(OptionalResidentModel.class)))
+                                .thenThrow(new RuntimeException("Resident not found"));
 
-        // // Object mapper to convert model to json
-        // ObjectMapper om = new ObjectMapper();
-        // String json = om.writeValueAsString(updatedResidentInfo);
-
-        // // Perform a PUT request to the /residents/{residentId} endpoint with the
-        // updated resident data.
-        // mockMvc.perform(put("/residents/{residentId}", mockResidentId)
-        // .contentType("application/json")
-        // .content(json))
-        // // Expect HTTP INTERNAL SERVER ERROR (500) status for a failed update.
-        // .andExpect(status().isInternalServerError()); // TODO : not throwing right
-        // exception
-        // }
+                // Act & Assert: Send POST request to /residents/{residentId} and verify error
+                // response.
+                mockMvc.perform(post("/residents/{residentId}", mockResidentId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(mockResident)))
+                                // Expect HTTP status 404 Not Found (as per handleErrorResponse for "not
+                                // found").
+                                .andExpect(status().isNotFound())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data.Error").value("Resident not found"))
+                                .andExpect(jsonPath("$.message").value("Not Found"))
+                                .andExpect(jsonPath("$.status").value(404));
+        }
 
         // Test case for successful login.
         // Checks the response body for the correct message and id.
@@ -648,6 +760,58 @@ public class ResidentControllerTests {
                 // Verify that the response message matches the expected error message.
                 assertEquals("Internal Service Error. The server was unable to complete your request. Please try again later.",
                                 ((ResponseModel<String>) response.getBody()).getMessage());
+        }
+
+        /**
+         * Tests register success case.
+         * Simulates a valid RegisterModel, expecting a successful registration.
+         */
+        @Test
+        public void testRegisterSuccess() throws Exception {
+                // Arrange: Mock service to return true for valid registration.
+                when(service.register(any(RegisterModel.class)))
+                                .thenReturn(true);
+
+                RegisterModel registerModel = new RegisterModel(mockResidentId.toString(), "John", "Doe", "Male",
+                                leaseID.toString(), 21, "Phoenix", "Bio", "", "", "", "", "", "");
+
+                // Act & Assert: Send POST request to /residents/register and verify response.
+                mockMvc.perform(post("/residents/")
+                                // Set content type to JSON.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize valid RegisterModel to JSON.
+                                .content(objectMapper.writeValueAsString(registerModel)))
+                                // Expect HTTP status 200 OK (as coded in controller).
+                                .andExpect(status().isOk())
+                                // Verify ResponseModel fields: data, message, status.
+                                .andExpect(jsonPath("$.data").value(true))
+                                .andExpect(jsonPath("$.message").value("Success"))
+                                .andExpect(jsonPath("$.status").value(201));
+        }
+
+        /**
+         * Tests register validation failure.
+         * Simulates an invalid RegisterModel, expecting a Bad Request response via
+         * handleErrorResponse.
+         * Verifies that IllegalArgumentException("Bad request") is thrown and handled.
+         */
+        @Test
+        public void testRegisterValidationError() throws Exception {
+                // Arrange: Use invalid RegisterModel with null fields to trigger
+                // errors.hasErrors().
+                // Assumes @NotNull on leaseId, email, and password in RegisterModel.
+
+                // Act & Assert: Send POST request to /residents/register and verify error
+                // response.
+                mockMvc.perform(post("/residents/")
+                                // Set content type to JSON.
+                                .contentType(MediaType.APPLICATION_JSON)
+                                // Serialize invalid RegisterModel to JSON.
+                                .content(objectMapper.writeValueAsString(null)))
+                                // Expect HTTP status 400 Bad Request (as per handleErrorResponse).
+                                .andExpect(status().isBadRequest());
+                // TODO - make sure it's being handled in the handleErrorRepsonse method, not
+                // being overriden by Spring's exception handling
         }
 
         // Test case for handling a bad request error.

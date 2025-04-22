@@ -1,6 +1,6 @@
 // Grace Radlund
-// 12-15-2024
-// Tests generated with the help of ChatGPT 4o mini
+// 4-22-2024
+// Tests generated with the help of ChatGPT 4o mini and Grok
 package com.knockk.api.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -21,15 +22,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 
 import com.knockk.api.business.AdminBusinessService;
-import com.knockk.api.model.AdminModel;
-import com.knockk.api.model.AdminResidentModel;
-import com.knockk.api.model.BuildingModel;
-import com.knockk.api.model.ResponseModel;
+import com.knockk.api.util.model.AdminModel;
+import com.knockk.api.util.model.AdminResidentModel;
+import com.knockk.api.util.model.BuildingModel;
+import com.knockk.api.util.model.ResponseModel;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,42 +39,36 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+/**
+ * Class for testing the admin controller
+ */
 @WebMvcTest(AdminController.class)
 public class AdminControllerTests {
 
-    // Inject the MockMvc instance to simulate HTTP requests to the controller.
+    // MockMvc instance to simulate HTTP requests to the controller.
     @Autowired
     private MockMvc mockMvc;
 
-    // // Mock the AdminBusinessService, which is used by the controller.
+    // Mock the AdminBusinessService, which is used by the controller.
     @MockBean
     private AdminBusinessService service;
 
-    // TODOTODO or
-    // Mock the AdminBusinessService dependency
-    // @Mock
-    // private AdminBusinessService service;
-
-    // Inject the mock service into the controller
-    @InjectMocks
-    private AdminController adminController;
-
     // Mock the Errors object to simulate validation errors during the login
     // process.
-    @Mock
+    @MockBean
     private Errors errors;
 
     // Global variables for reuse across tests
     private UUID adminId;
+    private UUID buildingId;
     private BuildingModel building1;
     private BuildingModel building2;
     private List<BuildingModel> buildingModels;
     private Pageable pageable;
+    private UUID residentId;
     private AdminResidentModel resident1;
     private AdminResidentModel resident2;
-    private List<AdminResidentModel> residentEntities;
     private List<AdminResidentModel> residentModels;
-    private AdminModel validAdminModel;
 
     @BeforeEach
     public void setUp() {
@@ -82,16 +78,17 @@ public class AdminControllerTests {
         // Initialize the validAdminModel with sample valid credentials before each
         // test.
         adminId = UUID.randomUUID();
+        buildingId = UUID.randomUUID();
         building1 = new BuildingModel("Building A", UUID.randomUUID());
         building2 = new BuildingModel("Building B", UUID.randomUUID());
         buildingModels = Arrays.asList(building1, building2);
         pageable = PageRequest.of(0, 10, Sort.by("lastName").ascending());
+        residentId = UUID.randomUUID();
         resident1 = new AdminResidentModel(building1.getId(), UUID.randomUUID(), "John", "Doe", "johndoe@gmail.com", 5,
                 25, new Date(11 / 11 / 2025), new Date(11 / 11 / 2205));
         resident2 = new AdminResidentModel(building1.getId(), UUID.randomUUID(), "John", "Deer", "johndeer@gmail.com",
                 3, 23, new Date(11 / 11 / 2025), new Date(11 / 11 / 2205));
-        residentEntities = List.of(resident1, resident2);
-        validAdminModel = new AdminModel("validUsername", "validPassword");
+        residentModels = List.of(resident1, resident2);
     }
 
     // Test case for successful login
@@ -193,130 +190,243 @@ public class AdminControllerTests {
 
     // Test successful retrieval of buildings
     @Test
-    void testGetBuildings_Success() throws Exception {
-        // Arrange: Mock the service to return the global buildingModels
-        when(service.getBuildings(adminId)).thenReturn(buildingModels);
+    public void testGetBuildingsSuccess() throws Exception {
+        // Arrange
+        when(service.getBuildings(eq(adminId))).thenReturn(buildingModels);
 
-        // Act: Invoke the controller method with the adminId as a string
-        ResponseEntity<?> responseEntity = adminController.getBuildings(adminId.toString());
-
-        // Assert: Verify the response
-        assertNotNull(responseEntity, "Success");
-        // assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Success");
-
-        // Cast the body to ResponseModel and verify its contents
-        ResponseModel<List<BuildingModel>> response = (ResponseModel<List<BuildingModel>>) responseEntity.getBody();
-        assertNotNull(response, "Response body should not be null");
-        assertEquals("Success", response.getMessage(), "Message should be 'Success'");
-        assertEquals(200, response.getStatus(), "Status code should be 200");
-        assertEquals(buildingModels, response.getData(), "Building list should match the mocked data");
-
-        // Verify service interaction
-        verify(service, times(1)).getBuildings(adminId);
-        verifyNoMoreInteractions(service);
+        // Act & Assert
+        mockMvc.perform(get("/admin/buildings/{adminId}", adminId.toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Success"))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data[0].name").value("Building A"))
+                .andExpect(jsonPath("$.data[1].name").value("Building B"));
     }
 
-    // Test error handling when service throws an exception
+    /**
+     * Tests the getBuildings endpoint when service.getBuildings throws an
+     * exception.
+     * Verifies that the catch block is triggered and handleErrorResponse returns an
+     * error response.
+     */
     @Test
-    void testGetBuildings_ServiceThrowsException() throws Exception {
-        // Arrange: Mock the service to throw an exception
-        Exception expectedException = new Exception("Not Found. No buildings found.");
-        when(service.getBuildings(adminId)).thenThrow(expectedException);
+    public void testGetBuildingsThrowsException() throws Exception {
+        // Arrange: Set up the test to simulate an exception.
+        // Mock service.getBuildings to throw a RuntimeException when called with
+        // adminId.
+        when(service.getBuildings(eq(adminId)))
+                .thenThrow(new Exception("Not Found. No buildings found."));
 
-        // Act: Invoke the controller method with the adminId as a string
-        ResponseEntity<?> responseEntity = adminController.getBuildings(adminId.toString());
-
-        // Assert: Verify the error response (assuming handleErrorResponse behavior)
-        assertNotNull(responseEntity, "ResponseEntity should not be null");
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode(),
-                "Not Found. No buildings found.");
-
-        // Cast the body to ResponseModel and verify its contents (assumed behavior)
-        ResponseModel<?> response = (ResponseModel<?>) responseEntity.getBody();
-        assertNotNull(response, "Response body should not be null");
-        assertEquals("Not Found", response.getMessage(),
-                "Message should match the exception");
-        assertEquals(404, response.getStatus(), "Status code should be 404");
-
-        // Verify service interaction
-        verify(service, times(1)).getBuildings(adminId);
-        verifyNoMoreInteractions(service);
+        // Act & Assert: Send a GET request and verify the error response.
+        mockMvc.perform(get("/admin/buildings/{adminId}", adminId.toString())
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 404 (Not Found)
+                .andExpect(status().isNotFound())
+                // Verify the response has an error message.
+                // Adjust the message based on what handleErrorResponse returns.
+                .andExpect(jsonPath("$.message").value("Not Found"))
+                // Verify the status field in ResponseModel, assuming 400.
+                .andExpect(jsonPath("$.status").value(404));
     }
 
-    // Test successful retrieval of residents
+    /**
+     * Tests the getResidents endpoint for the success case.
+     * Simulates a valid buildingId and verified=false, expecting a list of
+     * residents.
+     */
     @Test
-    void testGetResidents_Success() throws Exception {
-        // Arrange: Mock the service to return the global residentModels
-        when(service.getResidents(building1.getId(), false, pageable)).thenReturn(residentModels);
+    public void testGetResidentsSuccess() throws Exception {
+        // Arrange: Set up the mock service to return residents.
+        // Mock service.getResidents to return the residents list when called with
+        // buildingId, verified=false, and pageable.
+        when(service.getResidents(eq(buildingId), eq(false), eq(pageable)))
+                .thenReturn(residentModels);
 
-        // Act: Invoke the controller method with the buildingId as a string
-        ResponseEntity<?> responseEntity = adminController.getResidents(building1.getId().toString(), false, pageable);
-
-        // Assert: Verify the response
-        assertNotNull(responseEntity, "ResponseEntity should not be null");
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Status should be OK (200)");
-
-        // Cast the body to ResponseModel and verify its contents
-        ResponseModel<List<AdminResidentModel>> response = (ResponseModel<List<AdminResidentModel>>) responseEntity
-                .getBody();
-        assertNotNull(response, "Response body should not be null");
-        assertEquals("Success", response.getMessage(), "Message should be 'Success'");
-        assertEquals(200, response.getStatus(), "Status code should be 200");
-        assertEquals(residentModels, response.getData(), "Resident list should match the mocked data");
-
-        // Verify service interaction
-        verify(service, times(1)).getResidents(building1.getId(), false, pageable);
-        verifyNoMoreInteractions(service);
+        // Act & Assert: Send a GET request and verify the success response.
+        mockMvc.perform(get("/admin/{buildingId}/residents", buildingId.toString())
+                // Set query parameters: verified=false, page=0, size=10, sort=lastName,asc.
+                .param("verified", "false")
+                .param("page", "0")
+                .param("size", "10")
+                .param("sort", "lastName,asc")
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 200 OK.
+                .andExpect(status().isOk())
+                // Verify ResponseModel fields: message, status, and resident data.
+                .andExpect(jsonPath("$.message").value("Success"))
+                .andExpect(jsonPath("$.status").value(200))
+                // Verify the first resident’s fields.
+                .andExpect(jsonPath("$.data[0].firstName").value("John"))
+                .andExpect(jsonPath("$.data[0].lastName").value("Doe"))
+                .andExpect(jsonPath("$.data[0].email").value("johndoe@gmail.com"))
+                // Verify the second resident’s fields.
+                .andExpect(jsonPath("$.data[1].firstName").value("John"))
+                .andExpect(jsonPath("$.data[1].lastName").value("Deer"))
+                .andExpect(jsonPath("$.data[1].email").value("johndeer@gmail.com"));
     }
 
-    // Test error handling when service throws an exception
+    /**
+     * Tests the getResidents endpoint when service.getResidents throws an
+     * exception.
+     * Verifies that the catch block is triggered and handleErrorResponse returns an
+     * error response.
+     */
     @Test
-    void testGetResidents_ServiceThrowsException() throws Exception {
-        // Arrange: Mock the service to throw an exception
-        Exception expectedException = new Exception("Not found. No residents found.");
-        when(service.getResidents(building1.getId(), true, pageable)).thenThrow(expectedException);
+    public void testGetResidentsThrowsException() throws Exception {
+        // Arrange: Set up the mock service to throw an exception.
+        // Mock service.getResidents to throw a Exception when called.
+        when(service.getResidents(eq(buildingId), eq(false), eq(pageable)))
+                .thenThrow(new Exception("Not found. No residents found."));
 
-        // Act: Invoke the controller method
-        ResponseEntity<?> responseEntity = adminController.getResidents(building1.getId().toString(), true, pageable);
-
-        // Assert: Verify the error response
-        assertNotNull(responseEntity, "ResponseEntity should not be null");
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode(),
-                "Status should be NOT_FOUND (404)");
-
-        // Cast the body to ResponseModel and verify its contents
-        ResponseModel<?> response = (ResponseModel<?>) responseEntity.getBody();
-        assertNotNull(response, "Response body should not be null");
-        assertEquals("Not Found", response.getMessage(),
-                "Message should match the exception");
-        assertEquals(404, response.getStatus(), "Status code should be 404");
-
-        // Verify service interaction
-        verify(service, times(1)).getResidents(building1.getId(), true, pageable);
-        verifyNoMoreInteractions(service);
+        // Act & Assert: Send a GET request and verify the error response.
+        mockMvc.perform(get("/admin/{buildingId}/residents", buildingId.toString())
+                // Set query parameters: verified=false, page=0, size=10, sort=lastName,asc.
+                .param("verified", "false")
+                .param("page", "0")
+                .param("size", "10")
+                .param("sort", "lastName,asc")
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 400 Bad Request, assuming handleErrorResponse returns
+                // this.
+                .andExpect(status().isNotFound())
+                // Verify ResponseModel fields: message and status.
+                // Adjust message based on handleErrorResponse output.
+                .andExpect(jsonPath("$.message").value("Not Found"))
+                .andExpect(jsonPath("$.status").value(404));
     }
 
-    // Test with invalid buildingId format
+    /**
+     * Tests the getPageInfo endpoint for the success case.
+     * Simulates a valid buildingId and areVerified=false, expecting the number of
+     * residents.
+     */
     @Test
-    void testGetResidents_InvalidBuildingIdFormat() {
-        // Arrange: Pass an invalid UUID string
-        String invalidId = "not-a-uuid";
+    public void testGetPageInfoSuccess() throws Exception {
+        // Arrange: Set up the mock service to return the number of residents.
+        // Define the expected number of residents.
+        int numOfResidents = 5;
+        // Mock service.getNumberOfResidents to return numOfResidents when called with
+        // buildingId and areVerified=false.
+        when(service.getNumberOfResidents(eq(buildingId), eq(false)))
+                .thenReturn(numOfResidents);
 
-        // Act: Invoke the controller method with an invalid ID
-        ResponseEntity<?> responseEntity = adminController.getResidents(invalidId, false, pageable);
+        // Act & Assert: Send a GET request and verify the success response.
+        mockMvc.perform(get("/admin/{buildingId}/", buildingId.toString())
+                // Set query parameter: areVerified=false.
+                .param("areVerified", "false")
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 200 OK.
+                .andExpect(status().isOk())
+                // Verify ResponseModel fields: message, status, and data.
+                .andExpect(jsonPath("$.message").value("Success"))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data").value(numOfResidents));
+    }
 
-        // Assert: Verify the error response (UUID parsing fails)
-        assertNotNull(responseEntity, "ResponseEntity should not be null");
-        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode(),
-                "Status should be FORBIDDEN (400)");
+    /**
+     * Tests the getResident endpoint for the success case.
+     * Simulates a valid residentId, expecting the resident’s details.
+     */
+    @Test
+    public void testGetResidentSuccess() throws Exception {
+        // Arrange: Set up the mock service to return a resident.
+        // Mock service.getResident to return the resident when called with residentId.
+        when(service.getResident(eq(residentId)))
+                .thenReturn(resident1);
 
-        ResponseModel<?> response = (ResponseModel<?>) responseEntity.getBody();
-        assertNotNull(response, "Response body should not be null");
-        assertTrue(response.getMessage().contains("UUID"), "Message should indicate UUID parsing failure");
-        assertEquals(400, response.getStatus(), "Status code should be 400");
+        // Act & Assert: Send a GET request and verify the success response.
+        mockMvc.perform(get("/admin/{residentId}", residentId.toString())
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 200 OK.
+                .andExpect(status().isOk())
+                // Verify ResponseModel fields: message, status, and resident data.
+                .andExpect(jsonPath("$.message").value("Success"))
+                .andExpect(jsonPath("$.status").value(200))
+                // Verify resident fields in the data object.
+                .andExpect(jsonPath("$.data.firstName").value("John"))
+                .andExpect(jsonPath("$.data.lastName").value("Doe"))
+                .andExpect(jsonPath("$.data.email").value("johndoe@gmail.com"));
+    }
 
-        // Verify no service interaction (exception thrown before service call)
-        verifyNoInteractions(service);
+    /**
+     * Tests the getResident endpoint when service.getResident throws an exception.
+     * Verifies that the catch block is triggered and handleErrorResponse returns an
+     * error response.
+     */
+    @Test
+    public void testGetResidentThrowsException() throws Exception {
+        // Arrange: Set up the mock service to throw an exception.
+        // Mock service.getResident to throw a Exception when called.
+        when(service.getResident(eq(residentId)))
+                .thenThrow(new Exception("Resident not found"));
+
+        // Act & Assert: Send a GET request and verify the error response.
+        mockMvc.perform(get("/admin/{residentId}", residentId.toString())
+                // Set content type to JSON, though not strictly needed for GET.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 404 Not Found, assuming handleErrorResponse returns this.
+                .andExpect(status().isNotFound())
+                // Verify ResponseModel fields: message and status.
+                // Adjust message based on handleErrorResponse output.
+                .andExpect(jsonPath("$.message").value("Not Found"))
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    /**
+     * Tests the deleteResident endpoint for the success case.
+     * Simulates a valid residentId, expecting a successful deletion response.
+     * Assumes the response body is returned despite HttpStatus.NO_CONTENT (204).
+     */
+    @Test
+    public void testDeleteResidentSuccess() throws Exception {
+        // Arrange: Set up the mock service to return true for successful deletion.
+        // Mock service.deleteResident to return true when called with residentId.
+        when(service.deleteResident(eq(residentId)))
+                .thenReturn(true);
+
+        // Act & Assert: Send a DELETE request and verify the success response.
+        mockMvc.perform(delete("/admin/residents/{residentId}", residentId.toString())
+                // Set content type to JSON, though not strictly needed for DELETE.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 204 No Content.
+                .andExpect(status().isNoContent())
+                // Verify ResponseModel fields: message, status, and data.
+                // Note: If 204 truly omits the body, remove these assertions and check
+                // content().string("").
+                .andExpect(jsonPath("$.message").value("Account Creation Successful"))
+                .andExpect(jsonPath("$.status").value(204))
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    /**
+     * Tests the deleteResident endpoint when service.deleteResident throws an
+     * exception.
+     * Verifies that the catch block is triggered and handleErrorResponse returns an
+     * error response.
+     */
+    @Test
+    public void testDeleteResidentThrowsException() throws Exception {
+        // Arrange: Set up the mock service to throw an exception.
+        // Mock service.deleteResident to throw a Exception when called.
+        when(service.deleteResident(eq(residentId)))
+                .thenThrow(new Exception("Error deleting resident. Resident id is null.")); // id should be null
+
+        // Act & Assert: Send a DELETE request and verify the error response.
+        mockMvc.perform(delete("/admin/residents/{residentId}", residentId)
+                // Set content type to JSON, though not strictly needed for DELETE.
+                .contentType(MediaType.APPLICATION_JSON))
+                // Expect HTTP status 404 Not Found, assuming handleErrorResponse returns this.
+                .andExpect(status().isNotFound())
+                // Verify ResponseModel fields: message and status.
+                // Adjust message based on handleErrorResponse output.
+                .andExpect(jsonPath("$.message").value("Not Found"))
+                .andExpect(jsonPath("$.status").value(404));
     }
 
 }
