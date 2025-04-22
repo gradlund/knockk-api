@@ -399,7 +399,7 @@ public class ResidentController {
 
 			// Update the resident using the business service class
 			// Data service class throws an error if resident could not be updated
-			boolean updated = service.updateResident(residentId, residentInfo);
+			service.updateResident(residentId, residentInfo);
 
 			// If updated, send back a response
 			// if (updated) {

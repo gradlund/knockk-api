@@ -361,7 +361,7 @@ public class ResidentBusinessService {
 		}
 
 		// Update the resident
-		Boolean updated = dataService.updateResident(resident);
+		dataService.updateResident(resident);
 
 		// Updated resident
 		ResidentEntity residentUpdated = dataService.findResidentById(residentId);

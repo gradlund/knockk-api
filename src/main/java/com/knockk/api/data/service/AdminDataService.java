@@ -253,7 +253,7 @@ public class AdminDataService {
 	 * @return the number of residents
 	 * @throws Exception
 	 */
-	public int getNumberOfResidents(UUID buildingId, boolean verified) {
+	public int getNumberOfResidents(UUID buildingId, boolean verified) throws Exception {
 		int numOfResidents = residentRepository.retrieveNumberOfResidents(buildingId, verified);
 		return numOfResidents;
 	}
